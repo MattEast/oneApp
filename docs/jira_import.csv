@@ -1,0 +1,159 @@
+Issue Type,Summary,Description,Epic Name,Parent Summary,Depends On
+Epic,User Account Management,As a user, I want to create, log in, and manage my account securely.,User Account Management
+Story,User registration and login,Allow users to register, log in, and manage their account.,User Account Management,
+Sub-task,Design user registration form,Design the UI/UX for the user registration form.,User Account Management,User registration and login,User registration and login
+Sub-task,Implement backend registration endpoint,Create backend logic and endpoint for user registration.,User Account Management,User registration and login,Design user registration form
+Sub-task,Validate user input,Implement frontend and backend validation for registration data.,User Account Management,User registration and login,Design user registration form
+Sub-task,Store user credentials securely,Hash and store user passwords securely in the database.,User Account Management,User registration and login,Implement backend registration endpoint
+Sub-task,Implement backend login endpoint,Create backend logic and endpoint for user login.,User Account Management,User registration and login,Implement backend registration endpoint
+Sub-task,Implement authentication/session management,Implement session or token-based authentication for users.,User Account Management,User registration and login,Implement backend login endpoint
+Sub-task,Design login form,Design the UI/UX for the user login form.,User Account Management,User registration and login,User registration and login
+Sub-task,Add error handling and feedback,Provide user feedback for errors during registration and login.,User Account Management,User registration and login,Implement backend login endpoint
+Sub-task,Implement account management,Allow users to update profile and change password.,User Account Management,User registration and login,Implement authentication/session management
+Sub-task,Add tests for registration and login,Write tests for registration and login flows.,User Account Management,User registration and login,Implement backend login endpoint
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for registration and login.,User Account Management,User registration and login,Design user registration form
+Sub-task,Add user/developer documentation,Document registration and login flows for users and developers.,User Account Management,User registration and login,User registration and login
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for registration and login.,User Account Management,User registration and login,Implement backend login endpoint
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for registration and login.,User Account Management,User registration and login,Implement backend login endpoint
+Sub-task,Plan data backup and recovery,Plan backup and recovery for user account data.,User Account Management,User registration and login,Store user credentials securely
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on registration and login.,User Account Management,User registration and login,User registration and login
+
+Epic,Dashboard & UI,As a user, I want a clean, lightweight dashboard that summarizes my financial status.,Dashboard & UI
+Story,Dashboard overview,Display a summary of financial status and group categories.,Dashboard & UI,,User registration and login
+Sub-task,Design dashboard UI/UX,Design the user interface and experience for the dashboard overview.,Dashboard & UI,Dashboard overview,Dashboard overview
+Sub-task,Implement dashboard layout and navigation,Develop the dashboard layout and navigation structure.,Dashboard & UI,Dashboard overview,Design dashboard UI/UX
+Sub-task,Fetch and display summary financial data,Implement logic to fetch and display summary financial data on the dashboard.,Dashboard & UI,Dashboard overview,Implement dashboard layout and navigation
+Sub-task,Group categories visually,Group and display categories (mortgages, credit cards, loans, utilities, etc.) on the dashboard.,Dashboard & UI,Dashboard overview,Fetch and display summary financial data
+Sub-task,Add loading and error states,Provide loading indicators and error handling for dashboard data.,Dashboard & UI,Dashboard overview,Fetch and display summary financial data
+Sub-task,Write tests for dashboard overview,Write tests to ensure dashboard overview works as intended.,Dashboard & UI,Dashboard overview,Fetch and display summary financial data
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for dashboard overview.,Dashboard & UI,Dashboard overview,Design dashboard UI/UX
+Sub-task,Add user/developer documentation,Document dashboard overview for users and developers.,Dashboard & UI,Dashboard overview,Dashboard overview
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for dashboard overview.,Dashboard & UI,Dashboard overview,Fetch and display summary financial data
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for dashboard overview.,Dashboard & UI,Dashboard overview,Fetch and display summary financial data
+Sub-task,Plan data backup and recovery,Plan backup and recovery for dashboard data.,Dashboard & UI,Dashboard overview,Fetch and display summary financial data
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on dashboard overview.,Dashboard & UI,Dashboard overview,Dashboard overview
+Story,Category grouping,Group mortgages, credit cards, loans, utilities, and other bills.,Dashboard & UI,,Dashboard overview
+Sub-task,Define category types,Define and document all financial category types.,Dashboard & UI,Category grouping,Category grouping
+Sub-task,Implement category grouping logic,Develop logic to group items by category.,Dashboard & UI,Category grouping,Define category types
+Sub-task,Integrate grouping with dashboard,Ensure grouped categories display correctly on the dashboard.,Dashboard & UI,Category grouping,Implement category grouping logic
+Sub-task,Add tests for category grouping,Write tests to verify correct grouping and display.,Dashboard & UI,Category grouping,Integrate grouping with dashboard
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for category grouping.,Dashboard & UI,Category grouping,Define category types
+Sub-task,Add user/developer documentation,Document category grouping for users and developers.,Dashboard & UI,Category grouping,Category grouping
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for category grouping.,Dashboard & UI,Category grouping,Integrate grouping with dashboard
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for category grouping.,Dashboard & UI,Category grouping,Integrate grouping with dashboard
+Sub-task,Plan data backup and recovery,Plan backup and recovery for category grouping data.,Dashboard & UI,Category grouping,Integrate grouping with dashboard
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on category grouping.,Dashboard & UI,Category grouping,Category grouping
+
+Epic,Financial Data Input,As a user, I want to add and edit recurring payments and one-time expenses.,Financial Data Input
+Story,Add recurring payments,Allow users to add/edit recurring payments (mortgage, credit card, loan, utilities, etc.).,Financial Data Input,,User registration and login
+Sub-task,Design recurring payment form,Design UI/UX for adding/editing recurring payments.,Financial Data Input,Add recurring payments,Add recurring payments
+Sub-task,Implement backend for recurring payments,Create backend logic and endpoints for recurring payments.,Financial Data Input,Add recurring payments,Design recurring payment form
+Sub-task,Validate recurring payment input,Implement validation for recurring payment data.,Financial Data Input,Add recurring payments,Design recurring payment form
+Sub-task,Integrate recurring payments with dashboard,Ensure recurring payments are reflected in dashboard summaries.,Financial Data Input,Add recurring payments,Implement backend for recurring payments
+Sub-task,Add tests for recurring payments,Write tests for recurring payment functionality.,Financial Data Input,Add recurring payments,Implement backend for recurring payments
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for recurring payments.,Financial Data Input,Add recurring payments,Design recurring payment form
+Sub-task,Add user/developer documentation,Document recurring payments for users and developers.,Financial Data Input,Add recurring payments,Add recurring payments
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for recurring payments.,Financial Data Input,Add recurring payments,Implement backend for recurring payments
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for recurring payments.,Financial Data Input,Add recurring payments,Implement backend for recurring payments
+Sub-task,Plan data backup and recovery,Plan backup and recovery for recurring payment data.,Financial Data Input,Add recurring payments,Implement backend for recurring payments
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on recurring payments.,Financial Data Input,Add recurring payments,Add recurring payments
+Story,Add one-time expenses,Allow users to add/edit one-time expenses and income.,Financial Data Input,,User registration and login
+Sub-task,Design one-time expense form,Design UI/UX for adding/editing one-time expenses and income.,Financial Data Input,Add one-time expenses,Add one-time expenses
+Sub-task,Implement backend for one-time expenses,Create backend logic and endpoints for one-time expenses and income.,Financial Data Input,Add one-time expenses,Design one-time expense form
+Sub-task,Validate one-time expense input,Implement validation for one-time expense and income data.,Financial Data Input,Add one-time expenses,Design one-time expense form
+Sub-task,Integrate one-time expenses with dashboard,Ensure one-time expenses and income are reflected in dashboard summaries.,Financial Data Input,Add one-time expenses,Implement backend for one-time expenses
+Sub-task,Add tests for one-time expenses,Write tests for one-time expense and income functionality.,Financial Data Input,Add one-time expenses,Implement backend for one-time expenses
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for one-time expenses.,Financial Data Input,Add one-time expenses,Design one-time expense form
+Sub-task,Add user/developer documentation,Document one-time expenses for users and developers.,Financial Data Input,Add one-time expenses,Add one-time expenses
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for one-time expenses.,Financial Data Input,Add one-time expenses,Implement backend for one-time expenses
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for one-time expenses.,Financial Data Input,Add one-time expenses,Implement backend for one-time expenses
+Sub-task,Plan data backup and recovery,Plan backup and recovery for one-time expense data.,Financial Data Input,Add one-time expenses,Implement backend for one-time expenses
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on one-time expenses.,Financial Data Input,Add one-time expenses,Add one-time expenses
+
+Epic,Spending & Budgeting Tools,As a user, I want the app to calculate available funds and daily spending limits.,Spending & Budgeting Tools
+Story,Calculate available funds,Calculate available funds after all obligations.,Spending & Budgeting Tools,,Add recurring payments;Add one-time expenses
+Sub-task,Define available funds formula,Define the calculation logic for available funds.,Spending & Budgeting Tools,Calculate available funds,Calculate available funds
+Sub-task,Implement calculation logic,Develop backend logic to calculate available funds.,Spending & Budgeting Tools,Calculate available funds,Define available funds formula
+Sub-task,Display available funds on dashboard,Show available funds in the dashboard UI.,Spending & Budgeting Tools,Calculate available funds,Implement calculation logic
+Sub-task,Add tests for available funds calculation,Write tests to verify calculation accuracy.,Spending & Budgeting Tools,Calculate available funds,Implement calculation logic
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for available funds calculation.,Spending & Budgeting Tools,Calculate available funds,Define available funds formula
+Sub-task,Add user/developer documentation,Document available funds calculation for users and developers.,Spending & Budgeting Tools,Calculate available funds,Calculate available funds
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for available funds calculation.,Spending & Budgeting Tools,Calculate available funds
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for available funds calculation.,Spending & Budgeting Tools,Calculate available funds
+Sub-task,Plan data backup and recovery,Plan backup and recovery for available funds data.,Spending & Budgeting Tools,Calculate available funds
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on available funds calculation.,Spending & Budgeting Tools,Calculate available funds
+Story,Daily spending limit,Show daily spending limit based on budget and upcoming bills.,Spending & Budgeting Tools,,Calculate available funds
+Sub-task,Define daily spending limit formula,Define the calculation logic for daily spending limit.,Spending & Budgeting Tools,Daily spending limit,Daily spending limit
+Sub-task,Implement daily limit calculation,Develop backend logic to calculate daily spending limit.,Spending & Budgeting Tools,Daily spending limit,Define daily spending limit formula
+Sub-task,Display daily limit on dashboard,Show daily spending limit in the dashboard UI.,Spending & Budgeting Tools,Daily spending limit,Implement daily limit calculation
+Sub-task,Add tests for daily spending limit,Write tests to verify daily limit calculation and display.,Spending & Budgeting Tools,Daily spending limit,Implement daily limit calculation
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for daily spending limit.,Spending & Budgeting Tools,Daily spending limit,Define daily spending limit formula
+Sub-task,Add user/developer documentation,Document daily spending limit for users and developers.,Spending & Budgeting Tools,Daily spending limit,Daily spending limit
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for daily spending limit.,Spending & Budgeting Tools,Daily spending limit
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for daily spending limit.,Spending & Budgeting Tools,Daily spending limit
+Sub-task,Plan data backup and recovery,Plan backup and recovery for daily spending limit data.,Spending & Budgeting Tools,Daily spending limit
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on daily spending limit.,Spending & Budgeting Tools,Daily spending limit
+Story,Track fixed-term agreements,Track loan end dates and promotional rates.,Spending & Budgeting Tools,,Add recurring payments
+Sub-task,Design fixed-term agreement tracking UI,Design UI for tracking loan end dates and promotional rates.,Spending & Budgeting Tools,Track fixed-term agreements,Track fixed-term agreements
+Sub-task,Implement backend for fixed-term agreements,Develop backend logic to track loan end dates and promotional rates.,Spending & Budgeting Tools,Track fixed-term agreements,Design fixed-term agreement tracking UI
+Sub-task,Notify users of upcoming term ends,Implement notifications for upcoming loan end dates or rate changes.,Spending & Budgeting Tools,Track fixed-term agreements,Implement backend for fixed-term agreements
+Sub-task,Add tests for fixed-term agreements,Write tests for tracking and notifications of fixed-term agreements.,Spending & Budgeting Tools,Track fixed-term agreements,Implement backend for fixed-term agreements
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for fixed-term agreements.,Spending & Budgeting Tools,Track fixed-term agreements,Design fixed-term agreement tracking UI
+Sub-task,Add user/developer documentation,Document fixed-term agreements for users and developers.,Spending & Budgeting Tools,Track fixed-term agreements,Track fixed-term agreements
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for fixed-term agreements.,Spending & Budgeting Tools,Track fixed-term agreements
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for fixed-term agreements.,Spending & Budgeting Tools,Track fixed-term agreements
+Sub-task,Plan data backup and recovery,Plan backup and recovery for fixed-term agreement data.,Spending & Budgeting Tools,Track fixed-term agreements
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on fixed-term agreements.,Spending & Budgeting Tools,Track fixed-term agreements
+
+Epic,Notifications & Reminders,As a user, I want to receive reminders for upcoming payments and bills.,Notifications & Reminders
+Story,Payment reminders,Send reminders for upcoming payments and bills.,Notifications & Reminders,,Add recurring payments;Add one-time expenses
+Sub-task,Design payment reminder UI,Design UI for displaying and managing payment reminders.,Notifications & Reminders,Payment reminders,Payment reminders
+Sub-task,Implement backend for reminders,Develop backend logic to schedule and send payment reminders.,Notifications & Reminders,Payment reminders,Design payment reminder UI
+Sub-task,Integrate reminders with payment data,Ensure reminders are triggered by upcoming payments and bills.,Notifications & Reminders,Payment reminders,Implement backend for reminders
+Sub-task,Add tests for payment reminders,Write tests for reminder scheduling and notifications.,Notifications & Reminders,Payment reminders,Implement backend for reminders
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for payment reminders.,Notifications & Reminders,Payment reminders,Design payment reminder UI
+Sub-task,Add user/developer documentation,Document payment reminders for users and developers.,Notifications & Reminders,Payment reminders,Payment reminders
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for payment reminders.,Notifications & Reminders,Payment reminders
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for payment reminders.,Notifications & Reminders,Payment reminders
+Sub-task,Plan data backup and recovery,Plan backup and recovery for payment reminder data.,Notifications & Reminders,Payment reminders
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on payment reminders.,Notifications & Reminders,Payment reminders
+
+Epic,Insights & Reports,As a user, I want to view reports and insights on my spending habits and trends.,Insights & Reports
+Story,Spending reports,Provide reports and insights on spending habits and trends.,Insights & Reports,,Add recurring payments;Add one-time expenses
+Sub-task,Design spending reports UI,Design UI for displaying spending reports and insights.,Insights & Reports,Spending reports,Spending reports
+Sub-task,Implement backend for spending reports,Develop backend logic to generate spending reports and insights.,Insights & Reports,Spending reports,Design spending reports UI
+Sub-task,Integrate reports with financial data,Ensure reports use accurate and up-to-date financial data.,Insights & Reports,Spending reports,Implement backend for spending reports
+Sub-task,Add tests for spending reports,Write tests for report generation and display.,Insights & Reports,Spending reports,Implement backend for spending reports
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for spending reports.,Insights & Reports,Spending reports,Design spending reports UI
+Sub-task,Add user/developer documentation,Document spending reports for users and developers.,Insights & Reports,Spending reports,Spending reports
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for spending reports.,Insights & Reports,Spending reports
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for spending reports.,Insights & Reports,Spending reports
+Sub-task,Plan data backup and recovery,Plan backup and recovery for spending report data.,Insights & Reports,Spending reports
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on spending reports.,Insights & Reports,Spending reports
+
+Epic,Security & Privacy,As a user, I want my financial data to be stored securely and kept private.,Security & Privacy
+Story,Data security,Ensure all financial data is stored securely and kept private.,Security & Privacy,,User registration and login
+Sub-task,Define security requirements,Document security and privacy requirements for financial data.,Security & Privacy,Data security,Data security
+Sub-task,Implement data encryption,Encrypt sensitive financial data at rest and in transit.,Security & Privacy,Data security,Define security requirements
+Sub-task,Enforce access controls,Restrict access to financial data based on user roles.,Security & Privacy,Data security,Implement data encryption
+Sub-task,Add tests for data security,Write tests to verify data security and privacy measures.,Security & Privacy,Data security,Enforce access controls
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for data security features.,Security & Privacy,Data security,Define security requirements
+Sub-task,Add user/developer documentation,Document data security features for users and developers.,Security & Privacy,Data security,Data security
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for data security features.,Security & Privacy,Data security
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for data security features.,Security & Privacy,Data security
+Sub-task,Plan data backup and recovery,Plan backup and recovery for secure data.,Security & Privacy,Data security
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on data security features.,Security & Privacy,Data security
+
+Epic,Bank Account Integration,As a user, I want to source data directly from my bank account so the app is updated in real time.,Bank Account Integration
+Story,Real-time bank sync,Integrate with bank APIs to fetch transactions and update app data in real time.,Bank Account Integration,,Data security
+Sub-task,Research bank API options,Identify and document suitable bank APIs for integration.,Bank Account Integration,Real-time bank sync,Real-time bank sync
+Sub-task,Implement bank API integration,Develop backend logic to connect and sync with bank APIs.,Bank Account Integration,Real-time bank sync,Research bank API options
+Sub-task,Handle transaction data securely,Ensure secure handling and storage of bank transaction data.,Bank Account Integration,Real-time bank sync,Implement bank API integration
+Sub-task,Update app data in real time,Implement logic to update app data as new transactions arrive.,Bank Account Integration,Real-time bank sync,Implement bank API integration
+Sub-task,Add tests for bank sync,Write tests for bank integration and real-time updates.,Bank Account Integration,Real-time bank sync,Implement bank API integration
+Sub-task,Ensure accessibility compliance,Review and improve accessibility for bank sync features.,Bank Account Integration,Real-time bank sync,Research bank API options
+Sub-task,Add user/developer documentation,Document bank sync features for users and developers.,Bank Account Integration,Real-time bank sync,Real-time bank sync
+Sub-task,Monitor and optimize performance,Monitor and optimize performance for bank sync features.,Bank Account Integration,Real-time bank sync
+Sub-task,Implement error logging and monitoring,Add error logging and monitoring for bank sync features.,Bank Account Integration,Real-time bank sync
+Sub-task,Plan data backup and recovery,Plan backup and recovery for bank sync data.,Bank Account Integration,Real-time bank sync
+Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on bank sync features.,Bank Account Integration,Real-time bank sync
