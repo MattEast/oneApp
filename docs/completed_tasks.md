@@ -23,6 +23,7 @@
 | 2026-04-04 | Sweep backlog and prototype bookkeeping debt | Normalized completion flags for shipped slices, removed misleading completed-story flags where open work remains, and updated scope and test-priority docs to match the active prototype |
 | 2026-04-04 | Close active prototype accessibility and logging debt | Added lightweight structured backend observability for auth and financial flows, improved accessible state and error announcements in live frontend journeys, and aligned backlog bookkeeping for those cross-cutting tasks |
 | 2026-04-04 | Establish target monorepo foundation | Added root npm workspace config, scaffolded apps/packages/infra boundaries, published bootstrap guidance, and added the target monorepo architecture diagram |
+| 2026-04-04 | Capture login incident retro improvements | Added branch and bug-fix workflow rules, strengthened smoke and regression test expectations, and documented service-stability checks in ways of working docs |
 
 ## Returned To To-Do
 

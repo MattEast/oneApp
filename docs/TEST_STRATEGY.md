@@ -34,6 +34,9 @@
 - Use backend unit and integration tooling that matches the selected backend framework, with contract-first API testing as the baseline expectation
 - Use Playwright for end-to-end customer journeys in the target stack
 - Automate regression and smoke tests for every release
+- Include at least one process-level smoke test for startup-critical services (for example: start server on an isolated port, verify `/health`, then verify a critical auth path)
+- For each production or QA-found defect, add a regression test in the same change set as the fix
+- If frontend tests mock network calls, pair them with backend real-HTTP checks so service availability and endpoint wiring are still validated
 
 ## Tooling Transition
 - The current prototype may still contain Jest-based tests.
@@ -54,6 +57,7 @@
 ## Continuous Improvement
 - Review test coverage and effectiveness regularly
 - Add/adjust tests based on production issues and customer feedback
+- Feed learnings from retrospectives into this strategy and `docs/task_completion_automation.md` in the same iteration they are discovered
 
 ---
 

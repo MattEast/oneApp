@@ -10,6 +10,19 @@ This project uses both a markdown log (docs/completed_tasks.md) and a CSV (docs/
 - The markdown file should log the date, task, and details.
 - If a task is deprecated or deferred, update the relevant documentation and API contract in the same change instead of marking the customer-facing behavior as completed.
 
+## Ways Of Working Improvements (Retro: 2026-04-04)
+- Use one branch per planned unit of work:
+  - story work: `story/<id>-<slug>`
+  - bug work: `fix/<bug-id>-<slug>`
+  - maintenance/docs work: `chore/<slug>` or `docs/<slug>`
+- Do not push direct implementation changes to `master`; use a pull request with required checks.
+- For each discovered defect, add or update an entry in `docs/bugs.csv` with: steps to reproduce, route, root cause, and fix implemented.
+- Definition of done for bug fixes must include a regression test that fails without the fix.
+- For auth and startup-sensitive changes, run process-level smoke checks before closing work:
+  - `GET /health` returns `200`
+  - demo sign-in (`demo@oneapp.local`) succeeds through `POST /api/login`
+- Keep one backend terminal session running during manual login checks; avoid repeated port-kill loops unless intentionally restarting the service.
+
 ## Automation Script (Node.js Example)
 
 You can use a Node.js script to automate this process. Use a real CSV parser rather than splitting on commas so quoted descriptions and multiline fields remain intact. Place this script in your project root as update_completed_tasks.js:
