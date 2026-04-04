@@ -1,0 +1,33 @@
+name: Branch Name Check
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [ opened, reopened, synchronize ]
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch naming convention
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "Branch name: $BRANCH"
+          # Allowed patterns:
+          #   story/<id>-<slug>   e.g. story/PS-002-contract-first-workflow
+          #   fix/<slug>          e.g. fix/login-token-expiry
+          #   chore/<slug>        e.g. chore/update-dependencies
+          #   docs/<slug>         e.g. docs/adr-oidc-decision
+          if echo "$BRANCH" | grep -qE '^(story|fix|chore|docs)/[a-z0-9][a-z0-9-]*$'; then
+            echo "Branch name is valid."
+          else
+            echo ""
+            echo "ERROR: Branch name '$BRANCH' does not match the required convention."
+            echo ""
+            echo "  User story branches : story/<id>-<slug>  e.g. story/PS-002-contract-first-workflow"
+            echo "  Bug fix branches    : fix/<slug>          e.g. fix/login-token-expiry"
+            echo "  Chore branches      : chore/<slug>        e.g. chore/update-dependencies"
+            echo "  Docs-only branches  : docs/<slug>         e.g. docs/add-adr"
+            echo ""
+            exit 1
+          fi
