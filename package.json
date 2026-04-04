@@ -14,6 +14,6 @@
     "dev:frontend": "npm --prefix frontend start",
     "test:backend": "npm --prefix backend test",
     "test:frontend": "npm --prefix frontend test",
-    "lint:contracts": "node ./packages/contracts/scripts/validate-openapi.js"
+    "lint:contracts": "npm --prefix packages/contracts run validate && npm --prefix packages/contracts run check:drift"
   }
 }

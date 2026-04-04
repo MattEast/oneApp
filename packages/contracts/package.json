@@ -4,6 +4,8 @@
   "private": true,
   "description": "Shared API contracts and generated types",
   "scripts": {
-    "validate": "node ./scripts/validate-openapi.js"
+    "validate": "node ./scripts/validate-openapi.js",
+    "sync:openapi": "node ./scripts/sync-openapi.js",
+    "check:drift": "node ./scripts/check-contract-drift.js"
   }
 }
