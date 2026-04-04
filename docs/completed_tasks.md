@@ -24,6 +24,7 @@
 | 2026-04-04 | Close active prototype accessibility and logging debt | Added lightweight structured backend observability for auth and financial flows, improved accessible state and error announcements in live frontend journeys, and aligned backlog bookkeeping for those cross-cutting tasks |
 | 2026-04-04 | Establish target monorepo foundation | Added root npm workspace config, scaffolded apps/packages/infra boundaries, published bootstrap guidance, and added the target monorepo architecture diagram |
 | 2026-04-04 | Establish contract-first delivery workflow | Documented OpenAPI-first rules, defined shared contract artifact ownership, added contract drift checks, and enforced contract validation in CI |
+| 2026-04-04 | Establish async job and observability foundation | Defined worker and queue boundaries, scaffolded placeholder worker job modules with retry policy, and documented target observability baseline versus prototype monitoring |
 
 ## Returned To To-Do
 

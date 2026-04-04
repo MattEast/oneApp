@@ -64,6 +64,7 @@ These flows have been explicitly deprecated in code and tests until they are rea
 - `docs/PHASED_DELIVERY_ROADMAP.md` sequences delivery so prototype work does not outrun the documented design.
 - `docs/platform_setup_bootstrap.md` defines the target monorepo foundation, workspace boundaries, and bootstrap flow.
 - `docs/architecture/target_monorepo_foundation.mmd` is the architecture baseline diagram for the target monorepo migration.
+- `docs/architecture/async_observability_foundation.md` defines worker boundaries, queue/retry expectations, and prototype versus target-state observability baseline.
 - `docs/adr/` stores short architecture and delivery decisions that explain why the team is working this way.
 - `docs/bugs.csv` tracks discovered defects with reproduction steps, root cause, and implemented fix details.
 

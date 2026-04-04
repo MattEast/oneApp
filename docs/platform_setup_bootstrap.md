@@ -51,6 +51,7 @@ Run from repository root.
 - Product API contract remains authored in docs/openapi.yaml.
 - Contract checks are initiated through packages/contracts/scripts/validate-openapi.js.
 - Shared linting, test, and TypeScript base config will be centralized in packages/config as migration stories progress.
+- Worker boundaries and target observability expectations are documented in docs/architecture/async_observability_foundation.md.
 
 ## Migration Guardrails
 
