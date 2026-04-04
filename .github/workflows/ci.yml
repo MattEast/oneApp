@@ -31,6 +31,9 @@ jobs:
         run: |
           cd frontend
           npm test
+      - name: Run contract validation and drift checks
+        run: |
+          npm run lint:contracts
       - name: Run ESLint
         run: |
           npx eslint backend frontend

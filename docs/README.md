@@ -124,6 +124,15 @@ npm run test:frontend
 npm run lint:contracts
 ```
 
+### Contract-First Delivery Workflow
+
+- Contract changes start in `docs/openapi.yaml` before implementation changes.
+- Shared contract artifacts live in `packages/contracts/openapi/openapi.yaml` and must be kept in sync via `npm --prefix packages/contracts run sync:openapi`.
+- Delivery checks enforce contract quality and drift prevention through `npm run lint:contracts`.
+- Deprecation and versioning expectations:
+	- Any endpoint deprecation must be reflected in the contract first and included in release communication before implementation ships.
+	- Any breaking API change requires an explicit versioning plan and updated tests in the same change.
+
 #### Direct Commands (unchanged fallback)
 ```bash
 cd backend && npm test
