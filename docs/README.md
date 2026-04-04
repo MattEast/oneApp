@@ -66,6 +66,11 @@ These flows have been explicitly deprecated in code and tests until they are rea
 - `docs/architecture/target_monorepo_foundation.mmd` is the architecture baseline diagram for the target monorepo migration.
 - `docs/adr/` stores short architecture and delivery decisions that explain why the team is working this way.
 - `docs/bugs.csv` tracks discovered defects with reproduction steps, root cause, and implemented fix details.
+- `docs/onboarding_frontend_engineer.md` onboards junior frontend engineers to current scope, setup, and quality expectations.
+- `docs/onboarding_backend_engineer.md` onboards junior backend engineers to contract-first API delivery and testing expectations.
+- `docs/onboarding_devops_engineer.md` onboards junior DevOps engineers to CI/CD guardrails and delivery reliability practices.
+- `docs/onboarding_test_automation_engineer.md` onboards junior test automation engineers to strategy, coverage, and regression workflow.
+- `docs/onboarding_manager_progress_matrix.md` provides a week 1-4 onboarding and progress-tracking matrix across all junior roles.
 
 ## Ambiguity Rule
 
