@@ -55,6 +55,16 @@
 - Review test coverage and effectiveness regularly
 - Add/adjust tests based on production issues and customer feedback
 
+## CI Quality Gate Restoration Plan
+- Current state: lint and prettier checks are non-blocking advisory checks in CI during migration work.
+- Goal state: lint and prettier are blocking required checks for pull requests.
+- Restoration steps:
+   1. Baseline formatting and lint debt in active source directories.
+   2. Apply targeted cleanup batches by area (backend, frontend, docs) with no behavior changes.
+   3. Keep lint/prettier scoped to active project paths while debt is reduced.
+   4. Switch `continue-on-error` off for both checks once cleanup batches are complete.
+   5. Enforce as required branch-protection checks after two stable PR cycles.
+
 ---
 
 **All contributors must follow this strategy. Updates should be proposed via pull request.**
