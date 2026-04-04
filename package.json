@@ -9,6 +9,7 @@
     "frontend"
   ],
   "scripts": {
+    "start": "echo \"Use 'npm run dev:backend' or 'npm run dev:frontend'\" && exit 1",
     "dev:backend": "npm --prefix backend start",
     "dev:frontend": "npm --prefix frontend start",
     "test:backend": "npm --prefix backend test",

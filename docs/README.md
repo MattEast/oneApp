@@ -65,6 +65,7 @@ These flows have been explicitly deprecated in code and tests until they are rea
 - `docs/platform_setup_bootstrap.md` defines the target monorepo foundation, workspace boundaries, and bootstrap flow.
 - `docs/architecture/target_monorepo_foundation.mmd` is the architecture baseline diagram for the target monorepo migration.
 - `docs/adr/` stores short architecture and delivery decisions that explain why the team is working this way.
+- `docs/bugs.csv` tracks discovered defects with reproduction steps, root cause, and implemented fix details.
 
 ## Ambiguity Rule
 
