@@ -1,0 +1,1046 @@
+openapi: 3.0.3
+info:
+  title: OneApp API
+  version: 1.0.0
+  description: API contract for UK-first user registration, authentication, dashboard, and financial-planning features. Manual recurring-payment CRUD is deprecated while target-state recurring obligations move to bank-sourced detection.
+servers:
+  - url: http://localhost:4000/api
+paths:
+  /register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully and an authenticated session is started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /login:
+    post:
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /account:
+    get:
+      summary: Get current user account details
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      deprecated: true
+      summary: Update current user account details
+      description: Deprecated until account management is realigned with the documented product design.
+      security:
+        - bearerAuth: []
+      responses:
+        '410':
+          description: Endpoint deprecated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /dashboard-summary:
+    get:
+      summary: Get dashboard overview summary
+      description: Returns UK-first prototype dashboard data. Monetary values currently represent GBP in major units for the prototype, including saved one-time expenses and income.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard summary data for the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummaryResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /one-time-entries:
+    get:
+      summary: List one-time expenses and income
+      description: Returns saved one-time expenses and income entries for the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: One-time entries returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneTimeEntryListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create one-time expense or income entry
+      description: Creates a saved one-time financial entry for the authenticated user and makes it available to dashboard calculations.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OneTimeEntryInput'
+      responses:
+        '201':
+          description: One-time entry created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneTimeEntryResponse'
+        '400':
+          description: Invalid one-time entry payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /one-time-entries/{entryId}:
+    put:
+      summary: Update one-time expense or income entry
+      description: Updates a saved one-time financial entry for the authenticated user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: entryId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OneTimeEntryInput'
+      responses:
+        '200':
+          description: One-time entry updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneTimeEntryResponse'
+        '400':
+          description: Invalid one-time entry payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: One-time entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete one-time expense or income entry
+      description: Deletes a saved one-time financial entry for the authenticated user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: entryId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: One-time entry deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneTimeEntryDeleteResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: One-time entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/status:
+    get:
+      summary: Get mocked bank-link status
+      description: Returns provider-strategy metadata, consent state, linked-account status, and the latest mocked ingestion summary for the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Mocked bank-link status returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSyncStatusResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/mock-link:
+    post:
+      summary: Create mocked bank link
+      description: Creates a mocked linked-account record for development and test environments without calling a live provider.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MockBankLinkRequest'
+      responses:
+        '201':
+          description: Mocked bank link created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSyncStatusResponse'
+        '400':
+          description: Invalid mocked bank-link payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/mock-ingest:
+    post:
+      summary: Ingest mocked bank transactions
+      description: Ingests mocked booked transactions using the internal linked-account contract, surfaces duplicate and partial-ingestion outcomes, and avoids any live provider dependency.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MockBankIngestionRequest'
+      responses:
+        '200':
+          description: Mocked bank transactions ingested successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MockBankIngestionResponse'
+        '207':
+          description: Mocked bank transactions ingested with duplicate or partial-ingestion warnings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MockBankIngestionResponse'
+        '400':
+          description: Invalid mocked bank-ingestion payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /recurring-obligations:
+    get:
+      summary: List detected recurring obligations
+      description: Returns read-only recurring obligations detected from booked linked-account transactions for the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Detected recurring obligations returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringObligationListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /recurring-payments:
+    get:
+      deprecated: true
+      summary: List recurring payments
+      description: Deprecated. Manual recurring-payment management has been withdrawn while the product moves to bank-linked recurring obligation detection.
+      security:
+        - bearerAuth: []
+      responses:
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '410':
+          description: Endpoint deprecated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      deprecated: true
+      summary: Create a recurring payment
+      description: Deprecated. Manual recurring-payment management has been withdrawn while the product moves to bank-linked recurring obligation detection.
+      security:
+        - bearerAuth: []
+      responses:
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '410':
+          description: Endpoint deprecated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /recurring-payments/{paymentId}:
+    put:
+      deprecated: true
+      summary: Update a recurring payment
+      description: Deprecated. Manual recurring-payment management has been withdrawn while the product moves to bank-linked recurring obligation detection.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '410':
+          description: Endpoint deprecated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      deprecated: true
+      summary: Delete a recurring payment
+      description: Deprecated. Manual recurring-payment management has been withdrawn while the product moves to bank-linked recurring obligation detection.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '410':
+          description: Endpoint deprecated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /account/password:
+    put:
+      deprecated: true
+      summary: Change current user password
+      description: Deprecated until account management is realigned with the documented product design.
+      security:
+        - bearerAuth: []
+      responses:
+        '410':
+          description: Endpoint deprecated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /logout:
+    post:
+      summary: End current session
+      description: Acknowledge stateless sign-out for the current device session. The client must clear the stored JWT locally because the prototype does not yet revoke issued tokens server-side.
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Sign-out acknowledged
+
+  /password-reset:
+    post:
+      deprecated: true
+      summary: Initiate password reset
+      description: Deprecated until the password reset workflow is realigned with the documented product design.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '410':
+          description: Endpoint deprecated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /password-reset/confirm:
+    post:
+      deprecated: true
+      summary: Complete password reset
+      description: Deprecated until the password reset workflow is realigned with the documented product design.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+      responses:
+        '410':
+          description: Endpoint deprecated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - fullname
+        - email
+        - password
+      properties:
+        fullname:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresIn:
+          type: integer
+        user:
+          $ref: '#/components/schemas/AccountResponse'
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    AccountResponse:
+      type: object
+      properties:
+        fullname:
+          type: string
+        email:
+          type: string
+          format: email
+    DashboardSummaryResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            fullname:
+              type: string
+            email:
+              type: string
+              format: email
+            firstName:
+              type: string
+        periodLabel:
+          type: string
+          description: Human-readable reporting period label for the UK-facing prototype.
+        totals:
+          type: object
+          properties:
+            income:
+              type: number
+              description: Prototype GBP amount in major currency units.
+            recurringBills:
+              type: number
+              description: Prototype GBP amount in major currency units.
+            flexibleSpending:
+              type: number
+              description: Prototype GBP amount in major currency units.
+            oneTimeIncome:
+              type: number
+              description: Prototype GBP amount in major currency units contributed by saved one-time income entries.
+            oneTimeExpenses:
+              type: number
+              description: Prototype GBP amount in major currency units contributed by saved one-time expense entries.
+            availableFunds:
+              type: number
+              description: Prototype GBP amount in major currency units.
+        categories:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              amount:
+                type: number
+              kind:
+                type: string
+        reminders:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              dueInDays:
+                type: integer
+              status:
+                type: string
+        recurringDataSource:
+          $ref: '#/components/schemas/RecurringDataSource'
+        oneTimeEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/OneTimeEntry'
+    OneTimeEntryInput:
+      type: object
+      required:
+        - label
+        - type
+        - amount
+        - transactionDate
+        - category
+      properties:
+        label:
+          type: string
+        type:
+          type: string
+          enum:
+            - expense
+            - income
+        amount:
+          type: number
+          description: GBP amount in major currency units, stored as a positive value with type determining direction.
+        transactionDate:
+          type: string
+          format: date
+        category:
+          type: string
+        notes:
+          type: string
+    OneTimeEntry:
+      allOf:
+        - $ref: '#/components/schemas/OneTimeEntryInput'
+        - type: object
+          properties:
+            id:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    OneTimeEntryListResponse:
+      type: object
+      properties:
+        oneTimeEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/OneTimeEntry'
+    OneTimeEntryResponse:
+      type: object
+      properties:
+        oneTimeEntry:
+          $ref: '#/components/schemas/OneTimeEntry'
+    OneTimeEntryDeleteResponse:
+      type: object
+      properties:
+        deletedEntryId:
+          type: string
+    BankProviderStrategy:
+      type: object
+      properties:
+        preferredProvider:
+          type: string
+        rollout:
+          type: string
+        reason:
+          type: string
+        reasons:
+          type: array
+          items:
+            type: string
+    ConsentBoundaryMetadata:
+      type: object
+      properties:
+        requiredScopes:
+          type: array
+          items:
+            type: string
+        inScopeData:
+          type: array
+          items:
+            type: string
+        outOfScopeData:
+          type: array
+          items:
+            type: string
+    BankSyncMetadata:
+      type: object
+      properties:
+        provider:
+          type: string
+        contractVersion:
+          type: string
+        providerStrategy:
+          $ref: '#/components/schemas/BankProviderStrategy'
+        consentBoundaries:
+          $ref: '#/components/schemas/ConsentBoundaryMetadata'
+    MockBankLinkRequest:
+      type: object
+      required:
+        - accountId
+        - accountName
+        - sortCodeMasked
+        - last4
+      properties:
+        accountId:
+          type: string
+        accountName:
+          type: string
+        sortCodeMasked:
+          type: string
+          description: Masked UK sort code in 00-00-00 format.
+        last4:
+          type: string
+        linkedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    MockBankTransaction:
+      type: object
+      required:
+        - transactionId
+        - bookedAt
+        - amount
+        - currency
+        - merchantName
+        - direction
+        - status
+      properties:
+        transactionId:
+          type: string
+        bookedAt:
+          type: string
+          format: date-time
+        amount:
+          type: number
+          description: UK-first mock transaction amount in GBP major units.
+        currency:
+          type: string
+          enum:
+            - GBP
+        merchantName:
+          type: string
+        direction:
+          type: string
+          enum:
+            - in
+            - out
+        status:
+          type: string
+          enum:
+            - booked
+            - pending
+        categoryHint:
+          type: string
+    MockBankIngestionRequest:
+      type: object
+      required:
+        - ingestionId
+        - transactions
+      properties:
+        ingestionId:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/MockBankTransaction'
+    BankSyncConsentStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        grantedAt:
+          type: string
+          nullable: true
+        expiresAt:
+          type: string
+          nullable: true
+    LinkedBankAccount:
+      type: object
+      properties:
+        accountId:
+          type: string
+        accountName:
+          type: string
+        sortCodeMasked:
+          type: string
+        last4:
+          type: string
+        linkedAt:
+          type: string
+          format: date-time
+    SyncSummary:
+      type: object
+      properties:
+        ingestionId:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        outcome:
+          type: string
+        acceptedCount:
+          type: integer
+        duplicateCount:
+          type: integer
+        rejectedCount:
+          type: integer
+        acceptedTransactionIds:
+          type: array
+          items:
+            type: string
+        duplicateTransactionIds:
+          type: array
+          items:
+            type: string
+        rejectedTransactions:
+          type: array
+          items:
+            type: object
+            properties:
+              transactionId:
+                type: string
+              reason:
+                type: string
+    BankSyncStatus:
+      type: object
+      properties:
+        provider:
+          type: string
+        providerDisplayName:
+          type: string
+        providerStrategy:
+          $ref: '#/components/schemas/BankProviderStrategy'
+        consent:
+          $ref: '#/components/schemas/BankSyncConsentStatus'
+        linkedAccount:
+          $ref: '#/components/schemas/LinkedBankAccount'
+        transactionCount:
+          type: integer
+        latestSync:
+          $ref: '#/components/schemas/SyncSummary'
+    BankSyncStatusResponse:
+      type: object
+      properties:
+        metadata:
+          $ref: '#/components/schemas/BankSyncMetadata'
+        status:
+          $ref: '#/components/schemas/BankSyncStatus'
+    MockBankIngestionResponse:
+      type: object
+      properties:
+        metadata:
+          $ref: '#/components/schemas/BankSyncMetadata'
+        status:
+          $ref: '#/components/schemas/BankSyncStatus'
+        syncSummary:
+          $ref: '#/components/schemas/SyncSummary'
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/MockBankTransaction'
+    RecurringPaymentRequest:
+      type: object
+      required:
+        - label
+        - amount
+        - cadence
+        - paymentType
+        - category
+        - dueDay
+      properties:
+        label:
+          type: string
+        amount:
+          type: number
+          description: Prototype GBP amount in major currency units.
+        cadence:
+          type: string
+          enum:
+            - monthly
+            - four_weekly
+            - quarterly
+        paymentType:
+          type: string
+          enum:
+            - rent
+            - council_tax
+            - direct_debit
+            - standing_order
+            - utility_bill
+            - insurance
+            - subscription
+        category:
+          type: string
+          enum:
+            - housing
+            - household_bills
+            - transport
+            - insurance
+            - savings
+            - debt_repayment
+            - subscriptions
+        dueDay:
+          type: integer
+          minimum: 1
+          maximum: 28
+    RecurringPayment:
+      allOf:
+        - $ref: '#/components/schemas/RecurringPaymentRequest'
+        - type: object
+          properties:
+            id:
+              type: string
+            monthlyAmount:
+              type: number
+              description: Normalised monthly value used in the dashboard prototype.
+            cadenceLabel:
+              type: string
+            paymentTypeLabel:
+              type: string
+            categoryLabel:
+              type: string
+    RecurringPaymentResponse:
+      type: object
+      properties:
+        recurringPayment:
+          $ref: '#/components/schemas/RecurringPayment'
+    RecurringPaymentListResponse:
+      type: object
+      properties:
+        recurringPayments:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecurringPayment'
+    RecurringDataSource:
+      type: object
+      properties:
+        kind:
+          type: string
+        detectedCount:
+          type: integer
+        status:
+          type: string
+    RecurringObligation:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        amount:
+          type: number
+          description: Derived GBP amount in major currency units.
+        cadence:
+          type: string
+          enum:
+            - monthly
+            - four_weekly
+        paymentType:
+          type: string
+        category:
+          type: string
+        dueDay:
+          type: integer
+        monthlyAmount:
+          type: number
+        confidence:
+          type: number
+        occurrenceCount:
+          type: integer
+        source:
+          type: string
+        sourceTransactionIds:
+          type: array
+          items:
+            type: string
+        lastSeenAt:
+          type: string
+          format: date-time
+    RecurringObligationListResponse:
+      type: object
+      properties:
+        recurringObligations:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecurringObligation'
+    PasswordResetRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+    PasswordResetResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    PasswordResetConfirmRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+        newPassword:
+          type: string
+          format: password
+    PasswordResetConfirmResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string

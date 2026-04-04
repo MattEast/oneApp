@@ -1,0 +1,6 @@
+{
+  "name": "@oneapp/worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Target-state worker placeholder for reminders, sync, and reporting"
+}

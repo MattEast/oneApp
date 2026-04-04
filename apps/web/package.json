@@ -1,0 +1,6 @@
+{
+  "name": "@oneapp/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Target-state Next.js web app placeholder for phased migration"
+}

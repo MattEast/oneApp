@@ -1,0 +1,6 @@
+{
+  "name": "@oneapp/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Target-state NestJS API placeholder for phased migration"
+}

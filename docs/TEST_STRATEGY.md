@@ -1,0 +1,60 @@
+# Test Strategy
+
+## Principles
+- **Fail Fast:** Detect and surface defects as early as possible in the development lifecycle.
+- **Automate Where Appropriate:** Use automated tests for repeatable, high-value checks (unit, integration, regression, API, UI smoke tests).
+- **Test Through the Customer's Eyes:** Prioritize end-to-end scenarios and user journeys that reflect real customer behavior and needs.
+- **Get Product in Customers' Hands Quickly:** Shorten feedback loops by releasing early and often to real users (beta, canary, feature flags).
+- **Phased Testing Approach:** Layer testing activities to maximize coverage and speed.
+- **Protect Scope Integrity:** When a flow is deprecated or deferred, test the deprecation contract explicitly and remove it from active customer-journey coverage until redesign is complete.
+
+## Phased Testing Approach
+1. **Developer Phase**
+   - Unit tests for all new code (functions, components, API endpoints)
+   - Linting and static analysis
+   - Run on every commit/push (CI)
+
+2. **Integration Phase**
+   - Integration tests for backend APIs and frontend-backend flows
+   - Automated API contract tests
+   - Run on every pull request (CI)
+
+3. **System/End-to-End Phase**
+   - Automated E2E tests for active critical user journeys only
+   - Manual exploratory testing for new features
+   - Run on staging/pre-production
+
+4. **Customer/Beta Phase**
+   - Release to a subset of real users (beta, canary)
+   - Collect feedback and monitor for issues
+   - Roll out to all users after validation
+
+## Automation Guidelines
+- Use Vitest and Testing Library for frontend unit and integration tests in the target stack
+- Use backend unit and integration tooling that matches the selected backend framework, with contract-first API testing as the baseline expectation
+- Use Playwright for end-to-end customer journeys in the target stack
+- Automate regression and smoke tests for every release
+
+## Tooling Transition
+- The current prototype may still contain Jest-based tests.
+- Future implementation work should follow the target stack in `docs/TECH_STACK.md`.
+- When the prototype is replaced, migrate frontend tests to Vitest while preserving existing coverage intent and customer-journey priorities.
+
+## Scope Management
+- Maintain a clear list of active, deferred, and deprecated flows in product documentation.
+- Deprecated flows should have lightweight contract tests proving they remain unavailable or explicitly deprecated.
+- Do not include deprecated flows in customer-journey E2E suites.
+- When a deferred flow is reactivated, update acceptance criteria, API docs, BDD scenarios, and tests in the same change.
+
+## Customer-Centric Testing
+- Write acceptance criteria from the user's perspective
+- Use real-world data and scenarios in tests, with UK-realistic financial examples for the default market scope
+- Prioritize usability, accessibility, and error handling
+
+## Continuous Improvement
+- Review test coverage and effectiveness regularly
+- Add/adjust tests based on production issues and customer feedback
+
+---
+
+**All contributors must follow this strategy. Updates should be proposed via pull request.**

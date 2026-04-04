@@ -1,11 +1,11 @@
 Feature,Scenario,Given,When,Then
-User registration and login,Successful registration,User is on the registration page,User enters valid details and submits,User account is created and user is logged in
-User registration and login,Registration with existing email,User is on the registration page,User enters an email that already exists,User sees an error message about duplicate email
-User registration and login,Registration with invalid data,User is on the registration page,User enters invalid or incomplete details,User sees validation error messages
-User registration and login,Successful login,User has a registered account,User enters correct credentials and submits,User is logged in and redirected to dashboard
-User registration and login,Login with incorrect password,User has a registered account,User enters incorrect password,User sees an error message about invalid credentials
-User registration and login,Login with unregistered email,User is on the login page,User enters an unregistered email,User sees an error message about invalid credentials
+User registration and login,Successful registration,User is on the registration page,User enters valid details and submits,User account is created and the user starts an authenticated session
+User registration and login,Registration with existing email,User is on the registration page,User enters an email that already exists,User sees a clear duplicate-email error message and no account is created
+User registration and login,Registration with invalid data,User is on the registration page,User enters invalid or incomplete details,User sees validation error messages and the form is not submitted
+User registration and login,Successful login,User has a registered account,User enters correct credentials and submits,User is logged in and taken to their dashboard or landing view
+User registration and login,Login with incorrect password,User has a registered account,User enters incorrect password,User sees an invalid-credentials message and remains logged out
+User registration and login,Login with unregistered email,User is on the login page,User enters an unregistered email,User sees an invalid-credentials message and remains logged out
 User registration and login,Password reset,User is on the login page,User requests a password reset,User receives reset instructions and can set a new password
-User registration and login,Session management,User is logged in,User logs out,User session ends and user is redirected to login page
+User registration and login,Session management,User is logged in,User logs out,User session ends and protected routes require authentication again
 User registration and login,Profile update,User is logged in,User updates profile information,Profile changes are saved and confirmed
-User registration and login,Password change,User is logged in,User changes password,Password is updated and user is notified
+User registration and login,Password change,User is logged in,User changes password,Password is updated and the user is notified

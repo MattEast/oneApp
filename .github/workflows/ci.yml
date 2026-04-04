@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm install
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm test
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npm test
+      - name: Run ESLint
+        run: |
+          npx eslint backend frontend
+      - name: Run Prettier check
+        run: |
+          npx prettier --check "**/*.{js,jsx,json,md}"
+      - name: Check for forbidden Python files
+        run: |
+          if ls backend/*.py 1> /dev/null 2>&1; then echo "Python files found in backend!" && exit 1; fi

@@ -1,0 +1,26 @@
+flowchart LR
+    Customer[UK Customer] --> Web[apps/web\nTarget Next.js Web]
+    Web --> Api[apps/api\nTarget NestJS API]
+    Api --> Db[(PostgreSQL\nplanned)]
+    Api --> Redis[(Redis\nplanned)]
+    Worker[apps/worker\nBackground Jobs] --> Redis
+    Worker --> Db
+    Worker --> Notif[Reminder and Notification Providers\nplanned]
+    Contracts[packages/contracts\nOpenAPI Artifacts] --> Web
+    Contracts --> Api
+    Contracts --> Worker
+    UI[packages/ui\nShared UI] --> Web
+    Config[packages/config\nShared Tooling] --> Web
+    Config --> Api
+    Config --> Worker
+    Infra[infra\nIaC and Delivery Config] --> Web
+    Infra --> Api
+    Infra --> Worker
+    PrototypeWeb[frontend\nActive Prototype] --> PrototypeApi[backend\nActive Prototype]
+    PrototypeApi --> Api
+
+    classDef target fill:#e8f2ff,stroke:#2f6fed,stroke-width:1px;
+    classDef prototype fill:#fff4e6,stroke:#a66321,stroke-width:1px;
+
+    class Web,Api,Worker,Contracts,UI,Config,Infra target;
+    class PrototypeWeb,PrototypeApi prototype;

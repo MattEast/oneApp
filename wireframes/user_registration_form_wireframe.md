@@ -1,5 +1,7 @@
 # User Registration Form Wireframe (Textual)
 
+This wireframe is a target-state design reference. The registration flow is currently deprecated in the prototype until the end-to-end sign-up journey is realigned with the documented product design.
+
 ---
 | Logo |
 -----------------------------
@@ -21,6 +23,7 @@
 - Form should display validation errors inline
 - Accessibility: labels for all fields, keyboard navigation
 - Responsive layout for mobile/desktop
+- This wireframe should not be treated as an active product commitment until the registration flow is reactivated.
 
 ---
 

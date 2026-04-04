@@ -1,0 +1,9 @@
+{
+  "name": "@oneapp/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared API contracts and generated types",
+  "scripts": {
+    "validate": "node ./scripts/validate-openapi.js"
+  }
+}
