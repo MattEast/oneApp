@@ -1,0 +1,17 @@
+{
+  "default": {
+    "attempts": 5,
+    "backoff": "exponential",
+    "initialDelayMs": 1000,
+    "maxDelayMs": 300000
+  },
+  "deadLetter": {
+    "enabled": true,
+    "afterAttempts": 5,
+    "retentionDays": 14
+  },
+  "idempotency": {
+    "required": true,
+    "keySource": "job payload business identifier"
+  }
+}

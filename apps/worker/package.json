@@ -2,5 +2,8 @@
   "name": "@oneapp/worker",
   "version": "0.1.0",
   "private": true,
-  "description": "Target-state worker placeholder for reminders, sync, and reporting"
+  "description": "Target-state worker placeholder for reminders, sync, and reporting",
+  "scripts": {
+    "verify:foundation": "node ./scripts/verify-worker-foundation.js"
+  }
 }
