@@ -1,3 +1,4 @@
+| 2026-04-07 | API versioning and contract hardening | Mounted all active and deprecated routes under /api/v1/, updated OpenAPI server URL, synced contracts artifact, updated all backend and frontend tests and fetch URL base, and added ADR 0005 documenting the URL-prefix versioning decision |
 # Completed Tasks
 
 ## Completed And Still Active
@@ -25,6 +26,11 @@
 | 2026-04-04 | Establish target monorepo foundation | Added root npm workspace config, scaffolded apps/packages/infra boundaries, published bootstrap guidance, and added the target monorepo architecture diagram |
 | 2026-04-04 | Establish contract-first delivery workflow | Documented OpenAPI-first rules, defined shared contract artifact ownership, added contract drift checks, and enforced contract validation in CI |
 | 2026-04-04 | Establish async job and observability foundation | Defined worker and queue boundaries, scaffolded placeholder worker job modules with retry policy, and documented target observability baseline versus prototype monitoring |
+| 2026-04-04 | Adopt precision-safe money handling | Introduced internal minor-unit money utilities, refactored financial storage and calculations to avoid floating-point drift, updated contract/docs, and added regression coverage for decimal aggregation |
+| 2026-04-07 | Complete durable financial persistence | Persisted mocked bank-sync state in PostgreSQL via Prisma, added migration coverage, removed the last in-memory financial store, and verified state survives app re-instantiation |
+| 2026-04-07 | Add graceful degradation for unavailable linked-data persistence | Prevented missing bank-sync tables from breaking dashboard loads, returned explicit 503s for linked-data endpoints when persistence is unavailable, and added degraded-path regression coverage |
+| 2026-04-07 | Add startup readiness and migration guardrails | Added pre-listen database readiness checks for required tables, surfaced actionable migration guidance when startup prerequisites are missing, and added regression coverage for missing-schema and unreachable-database cases |
+| 2026-04-07 | Formalize and surface available-funds confidence | Documented available-funds formula and fallback rules, hardened backend available-funds calculation for active/fallback/degraded recurring-data states, and updated dashboard UI to surface confidence context with expanded regression coverage |
 
 ## Returned To To-Do
 

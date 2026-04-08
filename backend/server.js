@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const registerRoute = require('./register');
 const { logError, logInfo, logWarn } = require('./utils/observability');
+const { ensureStartupReadiness, isStartupReadinessError } = require('./startupReadiness');
 
 const app = express();
 app.use(cors({
@@ -41,7 +42,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api', registerRoute);
+app.use('/api/v1', registerRoute);
 
 app.use((error, req, res, next) => {
   logError('http.unhandled_exception', {
@@ -57,7 +58,29 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ error: 'Unexpected server error.' });
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  logInfo('server.started', { port: PORT });
+async function startServer() {
+  await ensureStartupReadiness();
+
+  const PORT = process.env.PORT || 4000;
+
+  app.listen(PORT, () => {
+    logInfo('server.started', { port: PORT });
+  });
+}
+
+startServer().catch((error) => {
+  if (isStartupReadinessError(error)) {
+    logError('server.startup.readiness_failed', {
+      message: error.message,
+      action: error.details?.action,
+      kind: error.details?.kind,
+      missingTables: error.details?.missingTables
+    });
+  } else {
+    logError('server.startup.failed', {
+      message: error.message
+    });
+  }
+
+  process.exit(1);
 });

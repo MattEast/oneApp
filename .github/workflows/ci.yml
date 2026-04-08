@@ -9,16 +9,35 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: oneapp_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '18'
+          node-version: '20'
       - name: Install backend dependencies
         run: |
           cd backend
           npm install
+      - name: Run Prisma migrations
+        run: |
+          cd backend
+          npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres@localhost:5432/oneapp_test
       - name: Run backend tests
         run: |
           cd backend
@@ -31,6 +50,9 @@ jobs:
         run: |
           cd frontend
           npm test
+      - name: Run runtime smoke check
+        run: |
+          npm run test:runtime-smoke
       - name: Run contract validation and drift checks
         run: |
           npm run lint:contracts

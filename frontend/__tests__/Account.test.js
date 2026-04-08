@@ -19,18 +19,18 @@ describe('Account Management UI', () => {
     window.localStorage.setItem('token', 'mocktoken');
     mockNavigate.mockReset();
     global.fetch = jest.fn((url, opts) => {
-      if (url.endsWith('/api/logout') && opts?.method === 'POST') {
+      if (url.endsWith('/api/v1/logout') && opts?.method === 'POST') {
         return Promise.resolve({ ok: true, status: 204, text: () => Promise.resolve('') });
       }
 
-      if (url.endsWith('/api/account') && (!opts || !opts.method || opts.method === 'GET')) {
+      if (url.endsWith('/api/v1/account') && (!opts || !opts.method || opts.method === 'GET')) {
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: () => Promise.resolve({ fullname: 'Test User', email: 'test@example.com' })
+          json: () => Promise.resolve({ success: true, data: { fullname: 'Test User', email: 'test@example.com' } })
         });
       }
-      return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({ error: 'Unknown endpoint' }) });
+      return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({ success: false, error: 'Unknown endpoint' }) });
     });
   });
   afterEach(() => {
@@ -49,7 +49,7 @@ describe('Account Management UI', () => {
     global.fetch.mockImplementationOnce(() =>
       Promise.resolve({
         ok: false,
-        json: () => Promise.resolve({ error: 'Failed to load profile' })
+        json: () => Promise.resolve({ success: false, error: 'Failed to load profile' })
       })
     );
 
@@ -64,7 +64,7 @@ describe('Account Management UI', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:4000/api/logout',
+        'http://localhost:4000/api/v1/logout',
         expect.objectContaining({ method: 'POST' })
       );
     });

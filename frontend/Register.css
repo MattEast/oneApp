@@ -245,6 +245,35 @@ select {
   color: #58697c;
 }
 
+.metric-confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0.1rem 0 0.5rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.metric-confidence-active {
+  background: #e7f6ec;
+  color: #1f6b3e;
+  border: 1px solid #b9e4c9;
+}
+
+.metric-confidence-fallback {
+  background: #edf4ff;
+  color: #285a9b;
+  border: 1px solid #c5daf9;
+}
+
+.metric-confidence-degraded {
+  background: #fff2e8;
+  color: #9c4b1a;
+  border: 1px solid #f3ccb2;
+}
+
 .dashboard-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

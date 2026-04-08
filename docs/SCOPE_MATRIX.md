@@ -10,7 +10,7 @@ This matrix shows how each major product area should be interpreted during plann
 | Category grouping | Foundation / partial prototype | Prototype grouped categories exist in the signed-in dashboard, including sourced recurring obligations and one-time expense grouping; fuller target-state categorisation remains planned. |
 | Recurring payments | Foundation / partial prototype | Read-only recurring-obligation detection from mocked linked bank data is active in the prototype dashboard and API; the old manual CRUD scaffold is deprecated in code. |
 | One-time expenses and income | Foundation / partial prototype | Authenticated one-time entry CRUD and dashboard recalculation are active in the prototype; budgeting follow-on work remains planned. |
-| Available funds calculation | Target-state planned | Depends on recurring and one-time financial data. |
+| Available funds calculation | Foundation / partial prototype | Basic income-minus-bills-minus-flexible calculation exists in the prototype dashboard; fuller target-state budgeting and daily spending limits remain planned. |
 | Daily spending limit | Target-state planned | Depends on available-funds calculation. |
 | Fixed-term agreements | Target-state planned | Depends on bank-sourced recurring obligations, sourced agreement detection, and reminder capabilities. |
 | Payment reminders | Target-state planned | Depends on financial input, scheduling, and notification infrastructure. |

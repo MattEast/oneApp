@@ -2,10 +2,31 @@ openapi: 3.0.3
 info:
   title: OneApp API
   version: 1.0.0
-  description: API contract for UK-first user registration, authentication, dashboard, and financial-planning features. Manual recurring-payment CRUD is deprecated while target-state recurring obligations move to bank-sourced detection.
+  description: |
+    API contract for UK-first user registration, authentication, dashboard, and financial-planning features.
+    Manual recurring-payment CRUD is deprecated while target-state recurring obligations move to bank-sourced detection.
+
+    **Response envelope:** All API responses are wrapped in a standard envelope.
+    Success responses return `{ "success": true, "data": { ... } }` where the `data` property contains the schema documented for each endpoint.
+    Error responses return `{ "success": false, "error": "..." }`.
 servers:
-  - url: http://localhost:4000/api
+  - url: http://localhost:4000/api/v1
 paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns the current health status of the API. Not wrapped in the standard response envelope.
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
   /register:
     post:
       summary: Register a new user
@@ -90,7 +111,7 @@ paths:
   /dashboard-summary:
     get:
       summary: Get dashboard overview summary
-      description: Returns UK-first prototype dashboard data. Monetary values currently represent GBP in major units for the prototype, including saved one-time expenses and income.
+      description: Returns UK-first prototype dashboard data. Monetary values are exposed in GBP major units for API compatibility while internal calculations use precision-safe GBP minor units.
       security:
         - bearerAuth: []
       responses:
@@ -314,6 +335,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/csv-import:
+    post:
+      summary: Import bank statement CSV
+      description: Imports CSV-based bank statement rows and ingests them through the same internal transaction pipeline used by bank-linked ingestion.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CsvBankImportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CsvBankImportUploadRequest'
+      responses:
+        '200':
+          description: CSV statement ingested successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MockBankIngestionResponse'
+        '207':
+          description: CSV statement ingested with duplicate or partial-ingestion warnings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MockBankIngestionResponse'
+        '400':
+          description: Invalid CSV import payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/import-history:
+    get:
+      summary: List CSV import history
+      description: Returns persisted CSV import summaries for the authenticated user ordered by most recent import first.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: CSV import history returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsvImportHistoryResponse'
         '401':
           description: Unauthorized
           content:
@@ -629,7 +711,7 @@ components:
             - income
         amount:
           type: number
-          description: GBP amount in major currency units, stored as a positive value with type determining direction.
+          description: GBP amount in major currency units, stored as a positive value with type determining direction. Internally this maps to minor-unit storage for precision-safe calculations.
         transactionDate:
           type: string
           format: date
@@ -747,7 +829,7 @@ components:
           format: date-time
         amount:
           type: number
-          description: UK-first mock transaction amount in GBP major units.
+          description: UK-first mock transaction amount in GBP major units provided by the ingestion payload. Internal calculations convert this to minor units.
         currency:
           type: string
           enum:
@@ -781,6 +863,34 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MockBankTransaction'
+    CsvBankImportRequest:
+      type: object
+      required:
+        - ingestionId
+        - csvData
+      properties:
+        ingestionId:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        csvData:
+          type: string
+          description: Raw CSV content including header row and transaction rows.
+    CsvBankImportUploadRequest:
+      type: object
+      required:
+        - ingestionId
+        - file
+      properties:
+        ingestionId:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        file:
+          type: string
+          format: binary
     BankSyncConsentStatus:
       type: object
       properties:
@@ -818,6 +928,11 @@ components:
         receivedAt:
           type: string
           format: date-time
+        source:
+          type: string
+          enum:
+            - bank_linked
+            - csv_import
         outcome:
           type: string
         acceptedCount:
@@ -880,6 +995,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MockBankTransaction'
+    CsvImportHistoryResponse:
+      type: object
+      properties:
+        metadata:
+          $ref: '#/components/schemas/BankSyncMetadata'
+        imports:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncSummary'
     RecurringPaymentRequest:
       type: object
       required:
@@ -958,10 +1082,26 @@ components:
       properties:
         kind:
           type: string
+          description: Source kind for recurring obligations used in dashboard calculations.
+          enum:
+            - bank_linked
+            - csv_import
+            - prototype_seeded
         detectedCount:
           type: integer
         status:
           type: string
+          description: Recurring-data confidence state for dashboard calculations.
+          enum:
+            - active
+            - fallback
+            - degraded
+        issue:
+          type: string
+          description: Optional machine-readable issue code when status is degraded.
+        message:
+          type: string
+          description: Optional customer-facing explanation when status is degraded.
     RecurringObligation:
       type: object
       properties:
@@ -971,7 +1111,7 @@ components:
           type: string
         amount:
           type: number
-          description: Derived GBP amount in major currency units.
+          description: Derived GBP amount exposed in major currency units. Internal recurring-obligation calculations use minor units.
         cadence:
           type: string
           enum:
@@ -1042,5 +1182,11 @@ components:
     ErrorResponse:
       type: object
       properties:
+        success:
+          type: boolean
+          enum: [false]
         error:
           type: string
+        details:
+          type: object
+          additionalProperties: true

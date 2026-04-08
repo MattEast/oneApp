@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Register.css';
-import { buildApiUrl, buildAuthHeaders } from './api';
+import { buildApiUrl, buildAuthHeaders, unwrapApiData } from './api';
 import { isInvalidSessionResponse } from './auth';
 import { endClientSession, logoutCurrentSession } from './session';
 
@@ -30,7 +30,8 @@ export default function Account() {
         });
         const data = await res.json();
         if (res.ok) {
-          setProfile({ fullname: data.fullname, email: data.email });
+          const profile = unwrapApiData(data);
+          setProfile({ fullname: profile.fullname, email: profile.email });
         } else if (isInvalidSessionResponse(res, data)) {
           endClientSession(navigate);
         } else {

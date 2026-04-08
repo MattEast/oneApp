@@ -1,0 +1,117 @@
+// Prisma schema for durable financial persistence (PostgreSQL)
+// See docs/architecture/ for schema documentation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  fullname    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     FinancialProfile?
+  bankSyncProfile BankSyncProfile?
+}
+
+model FinancialProfile {
+  id                String   @id @default(uuid())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String   @unique
+  monthlyIncomeMinor Int
+  referenceDayOfMonth Int
+  periodLabel       String
+  oneTimeEntries    OneTimeEntry[]
+  flexibleCategories FlexibleCategory[]
+  recurringPayments RecurringPayment[]
+}
+
+model OneTimeEntry {
+  id            String   @id @default(uuid())
+  profile       FinancialProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId     String
+  label         String
+  type          String
+  amountMinor   Int
+  transactionDate DateTime
+  category      String
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model FlexibleCategory {
+  id            String   @id @default(uuid())
+  profile       FinancialProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId     String
+  name          String
+  amountMinor   Int
+  kind          String
+}
+
+model RecurringPayment {
+  id            String   @id @default(uuid())
+  profile       FinancialProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId     String
+  label         String
+  amountMinor   Int
+  cadence       String
+  paymentType   String
+  category      String
+  dueDay        Int
+}
+
+model BankSyncProfile {
+  id                  String            @id @default(uuid())
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String            @unique
+  provider            String
+  providerDisplayName String
+  providerStrategy    Json
+  consent             Json
+  linkedAccount       Json?
+  transactions        BankSyncTransaction[]
+  syncHistory         BankSyncSyncSummary[]
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+}
+
+model BankSyncTransaction {
+  id            String          @id @default(uuid())
+  profile       BankSyncProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId     String
+  transactionId String
+  bookedAt      DateTime
+  amountMinor   Int
+  currency      String
+  merchantName  String
+  direction     String
+  status        String
+  categoryHint  String?
+  createdAt     DateTime        @default(now())
+
+  @@unique([profileId, transactionId])
+}
+
+model BankSyncSyncSummary {
+  id                    String          @id @default(uuid())
+  profile               BankSyncProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId             String
+  ingestionId           String
+  receivedAt            DateTime
+  outcome               String
+  acceptedCount         Int
+  duplicateCount        Int
+  rejectedCount         Int
+  acceptedTransactionIds Json
+  duplicateTransactionIds Json
+  rejectedTransactions  Json
+  createdAt             DateTime        @default(now())
+}
