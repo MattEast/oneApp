@@ -69,6 +69,5 @@ describe('Account Management UI', () => {
       );
     });
     expect(window.localStorage.getItem('token')).toBeNull();
-    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 });

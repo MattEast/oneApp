@@ -22,28 +22,5 @@
     "start": "parcel serve index.html --port 3000",
     "build": "parcel build index.html",
     "test": "jest"
-  },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": [
-      "@testing-library/jest-dom"
-    ],
-    "transform": {
-      "^.+\\.[jt]sx?$": [
-        "babel-jest",
-        {
-          "presets": [
-            "@babel/preset-env",
-            "@babel/preset-react"
-          ]
-        }
-      ]
-    },
-    "moduleNameMapper": {
-      "^react$": "<rootDir>/../node_modules/react",
-      "^react-dom$": "<rootDir>/../node_modules/react-dom",
-      "^react/jsx-runtime$": "<rootDir>/../node_modules/react/jsx-runtime.js",
-      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
-    }
   }
 }
