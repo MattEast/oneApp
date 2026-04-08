@@ -21,6 +21,7 @@
     "test": "dotenv -e .env.test -- jest"
   },
   "devDependencies": {
+    "dotenv-cli": "^11.0.0",
     "jest": "^29.0.0",
     "supertest": "^6.3.3"
   }
