@@ -40,6 +40,9 @@
       ]
     },
     "moduleNameMapper": {
+      "^react$": "<rootDir>/node_modules/react",
+      "^react-dom$": "<rootDir>/node_modules/react-dom",
+      "^react/jsx-runtime$": "<rootDir>/node_modules/react/jsx-runtime.js",
       "\\.(css|less|scss|sass)$": "identity-obj-proxy"
     }
   }
