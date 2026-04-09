@@ -272,6 +272,71 @@ describe('Mock bank-linked data ingestion', () => {
     expect(response.body.data.syncSummary.acceptedCount).toBe(2);
   });
 
+  it('requires authentication for CSV import', async () => {
+    const response = await request(app)
+      .post('/api/v1/bank-sync/csv-import')
+      .send({
+        ingestionId: 'csv-no-auth-001',
+        csvData: [
+          'date,description,amount,currency,status',
+          '2026-03-10T09:00:00.000Z,Acme Utilities,-120,GBP,booked'
+        ].join('\n')
+      });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body.error).toMatch(/authorization header/i);
+  });
+
+  it('rejects multipart upload when file type is not csv or text/plain', async () => {
+    const { token } = await registerAndLogin(app);
+
+    const response = await request(app)
+      .post('/api/v1/bank-sync/csv-import')
+      .set('Authorization', `Bearer ${token}`)
+      .field('ingestionId', 'csv-bad-type-001')
+      .attach('file', Buffer.from('hello world', 'utf-8'), {
+        filename: 'statement.pdf',
+        contentType: 'application/pdf'
+      });
+
+    expect(response.statusCode).toBe(415);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        success: false,
+        error: expect.stringMatching(/csv file type/i),
+        details: expect.objectContaining({
+          acceptedMimeTypes: expect.arrayContaining(['text/csv', 'text/plain'])
+        })
+      })
+    );
+  });
+
+  it('rejects multipart upload when csv file exceeds size limit', async () => {
+    const { token } = await registerAndLogin(app);
+    const largeCsv = Buffer.from(`date,description,amount,currency,status\n${'x'.repeat(1024 * 1024 + 256)}`, 'utf-8');
+
+    const response = await request(app)
+      .post('/api/v1/bank-sync/csv-import')
+      .set('Authorization', `Bearer ${token}`)
+      .field('ingestionId', 'csv-too-large-001')
+      .attach('file', largeCsv, {
+        filename: 'statement.csv',
+        contentType: 'text/csv'
+      });
+
+    expect(response.statusCode).toBe(413);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        success: false,
+        error: expect.stringMatching(/maximum upload size/i),
+        details: expect.objectContaining({
+          maxBytes: 1024 * 1024,
+          field: 'file'
+        })
+      })
+    );
+  });
+
   it('returns persisted csv import history for the authenticated user', async () => {
     const { token } = await registerAndLogin(app);
 
