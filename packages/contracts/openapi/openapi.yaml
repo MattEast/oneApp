@@ -376,6 +376,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Uploaded CSV file exceeds the configured size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '415':
+          description: Uploaded multipart file is not a supported CSV-compatible file type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Unauthorized
           content:
@@ -868,6 +880,13 @@ components:
       required:
         - ingestionId
         - csvData
+      description: |
+        Supported CSV columns (aliases are accepted case-insensitively):
+        - Required: `bookedAt` (`date`, `booked_at`, `transactionDate`), `amount` (`value`, `transactionAmount`), `merchantName` (`merchant`, `description`, `payee`)
+        - Optional: `transactionId` (`transaction_id`, `id`, `reference`), `currency` (`ccy`), `direction` (`flow`, `type`), `status` (`transactionStatus`), `categoryHint` (`category`, `category_hint`)
+        Parsing rules:
+        - Negative amounts infer `direction=out`; positive amounts infer `direction=in` when direction is omitted.
+        - `currency` defaults to `GBP`; `status` defaults to `booked`.
       properties:
         ingestionId:
           type: string
@@ -882,6 +901,10 @@ components:
       required:
         - ingestionId
         - file
+      description: |
+        Multipart upload variant of `CsvBankImportRequest`.
+        - Accepted file MIME types: `text/csv`, `text/plain`, `application/vnd.ms-excel`
+        - Maximum upload size: 1 MB
       properties:
         ingestionId:
           type: string
