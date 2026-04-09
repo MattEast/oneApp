@@ -2,5 +2,23 @@
   "name": "@oneapp/web",
   "version": "0.1.0",
   "private": true,
-  "description": "Target-state Next.js web app placeholder for phased migration"
+  "description": "Target-state Next.js web app for phased migration",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.0",
+    "@types/node": "^22.15.21",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "^5.8.3"
+  }
 }

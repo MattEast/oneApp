@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Register.css';
-import { buildApiUrl, buildAuthHeaders } from './api';
+import { buildApiUrl, buildAuthHeaders, unwrapApiData } from './api';
 import { isInvalidSessionResponse } from './auth';
 import { endClientSession, logoutCurrentSession } from './session';
 
@@ -91,6 +91,51 @@ function getCategoryLabel(type, category) {
   return option ? option.label : category;
 }
 
+function getAvailableFundsConfidence(recurringDataSource) {
+  if (recurringDataSource?.kind === 'bank_linked' && recurringDataSource?.status === 'active') {
+    return {
+      tone: 'active',
+      label: 'Linked-data confidence: high',
+      note: 'Available funds reflect detected linked recurring obligations and recorded one-off entries.'
+    };
+  }
+
+  if (recurringDataSource?.status === 'degraded') {
+    return {
+      tone: 'degraded',
+      label: 'Linked-data confidence: degraded',
+      note: recurringDataSource.message || 'Linked recurring data is temporarily unavailable. Using safe fallback recurring totals.'
+    };
+  }
+
+  return {
+    tone: 'fallback',
+    label: 'Linked-data confidence: estimated',
+    note: 'Available funds currently use prototype recurring data plus recorded one-off entries.'
+  };
+}
+
+function getRecurringSectionCopy(recurringDataSource) {
+  if (recurringDataSource?.kind === 'bank_linked' && recurringDataSource?.status === 'active') {
+    return {
+      badge: 'Live linked data',
+      body: 'Recurring obligations are being detected from linked bank-account transactions and shown as read-only in this prototype.'
+    };
+  }
+
+  if (recurringDataSource?.status === 'degraded') {
+    return {
+      badge: 'Degraded fallback',
+      body: recurringDataSource.message || 'Linked recurring data is temporarily unavailable. Monthly totals currently use prototype fallback recurring data.'
+    };
+  }
+
+  return {
+    badge: 'Prototype fallback',
+    body: 'Monthly totals and due-soon reminders currently use the seeded prototype recurring profile while linked-data evidence is still being built.'
+  };
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
@@ -140,13 +185,14 @@ export default function Dashboard() {
         return;
       }
 
-      setSummary(summaryData);
+      setSummary(unwrapApiData(summaryData));
 
       if (!entriesResponse.ok) {
         setOneTimeEntries([]);
         setEntryError(entriesData.error || 'Failed to load one-time entries.');
       } else {
-        setOneTimeEntries(entriesData.oneTimeEntries || []);
+        const entries = unwrapApiData(entriesData);
+        setOneTimeEntries(entries.oneTimeEntries || []);
       }
     } catch (fetchError) {
       setError('Unable to reach the API. Check that the backend is running.');
@@ -304,6 +350,9 @@ export default function Dashboard() {
     );
   }
 
+  const availableFundsConfidence = getAvailableFundsConfidence(summary.recurringDataSource);
+  const recurringSectionCopy = getRecurringSectionCopy(summary.recurringDataSource);
+
   return (
     <main className="dashboard-shell">
       <div className="dashboard-panel">
@@ -325,7 +374,8 @@ export default function Dashboard() {
           <section className="metric-card">
             <p className="metric-label">Money left this month</p>
             <p className="metric-value">{formatCurrency(summary.totals.availableFunds)}</p>
-            <p className="metric-note">What is left after planned bills and day-to-day spending.</p>
+            <p className={`metric-confidence-badge metric-confidence-${availableFundsConfidence.tone}`}>{availableFundsConfidence.label}</p>
+            <p className="metric-note">{availableFundsConfidence.note}</p>
           </section>
           <section className="metric-card">
             <p className="metric-label">Money coming in</p>
@@ -396,11 +446,11 @@ export default function Dashboard() {
               <h2>Recurring obligations</h2>
               <p className="section-description">Manual recurring-payment management has been withdrawn while this journey is redesigned around linked bank-account data.</p>
             </div>
-            <span>Planned</span>
+            <span>{recurringSectionCopy.badge}</span>
           </div>
 
           <p className="empty-state">
-            Monthly totals and due-soon reminders still reflect the prototype financial profile used for this demo, but editing those recurring obligations is deprecated until bank-linked sourcing is implemented.
+            {recurringSectionCopy.body}
           </p>
         </section>
 

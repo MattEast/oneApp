@@ -24,6 +24,14 @@
 | 2026-04-04 | Close active prototype accessibility and logging debt | Added lightweight structured backend observability for auth and financial flows, improved accessible state and error announcements in live frontend journeys, and aligned backlog bookkeeping for those cross-cutting tasks |
 | 2026-04-04 | Establish target monorepo foundation | Added root npm workspace config, scaffolded apps/packages/infra boundaries, published bootstrap guidance, and added the target monorepo architecture diagram |
 | 2026-04-04 | Capture login incident retro improvements | Added branch and bug-fix workflow rules, strengthened smoke and regression test expectations, and documented service-stability checks in ways of working docs |
+| 2026-04-04 | Establish contract-first delivery workflow | Documented OpenAPI-first rules, defined shared contract artifact ownership, added contract drift checks, and enforced contract validation in CI |
+| 2026-04-04 | Establish async job and observability foundation | Defined worker and queue boundaries, scaffolded placeholder worker job modules with retry policy, and documented target observability baseline versus prototype monitoring |
+| 2026-04-04 | Adopt precision-safe money handling | Introduced internal minor-unit money utilities, refactored financial storage and calculations to avoid floating-point drift, updated contract/docs, and added regression coverage for decimal aggregation |
+| 2026-04-07 | Complete durable financial persistence | Persisted mocked bank-sync state in PostgreSQL via Prisma, added migration coverage, removed the last in-memory financial store, and verified state survives app re-instantiation |
+| 2026-04-07 | Add graceful degradation for unavailable linked-data persistence | Prevented missing bank-sync tables from breaking dashboard loads, returned explicit 503s for linked-data endpoints when persistence is unavailable, and added degraded-path regression coverage |
+| 2026-04-07 | Add startup readiness and migration guardrails | Added pre-listen database readiness checks for required tables, surfaced actionable migration guidance when startup prerequisites are missing, and added regression coverage for missing-schema and unreachable-database cases |
+| 2026-04-07 | Formalize and surface available-funds confidence | Documented available-funds formula and fallback rules, hardened backend available-funds calculation for active/fallback/degraded recurring-data states, and updated dashboard UI to surface confidence context with expanded regression coverage |
+| 2026-04-08 | Deliver target web auth and dashboard shell slice | Added apps/web Next.js migration slice for register, sign in, protected dashboard shell, and API helpers; fixed strict TypeScript build issues; added Playwright auth-to-dashboard smoke coverage; and aligned run/test documentation for legacy frontend plus new web slice |
 
 ## Returned To To-Do
 

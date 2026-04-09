@@ -61,9 +61,12 @@ These flows have been explicitly deprecated in code and tests until they are rea
 - `docs/user_registration_login_bdd.csv` describes the target-state customer behavior.
 - `docs/auth_scope_status.md` describes the current prototype scope, deprecated flows, and reactivation expectations.
 - `docs/SCOPE_MATRIX.md` shows whole-product status across active, planned, deprecated, and target-state areas.
+- `docs/architecture/backend_reconciliation_note.md` records how deprecated prototype behavior and backend refactors map from legacy files to the current structure.
 - `docs/PHASED_DELIVERY_ROADMAP.md` sequences delivery so prototype work does not outrun the documented design.
 - `docs/platform_setup_bootstrap.md` defines the target monorepo foundation, workspace boundaries, and bootstrap flow.
 - `docs/architecture/target_monorepo_foundation.mmd` is the architecture baseline diagram for the target monorepo migration.
+- `docs/architecture/async_observability_foundation.md` defines worker boundaries, queue/retry expectations, and prototype versus target-state observability baseline.
+- `docs/architecture/precision_safe_money_model.md` defines the internal GBP minor-unit money model and migration approach.
 - `docs/adr/` stores short architecture and delivery decisions that explain why the team is working this way.
 - `docs/bugs.csv` tracks discovered defects with reproduction steps, root cause, and implemented fix details.
 
@@ -124,6 +127,15 @@ npm run test:frontend
 npm run lint:contracts
 ```
 
+### Contract-First Delivery Workflow
+
+- Contract changes start in `docs/openapi.yaml` before implementation changes.
+- Shared contract artifacts live in `packages/contracts/openapi/openapi.yaml` and must be kept in sync via `npm --prefix packages/contracts run sync:openapi`.
+- Delivery checks enforce contract quality and drift prevention through `npm run lint:contracts`.
+- Deprecation and versioning expectations:
+	- Any endpoint deprecation must be reflected in the contract first and included in release communication before implementation ships.
+	- Any breaking API change requires an explicit versioning plan and updated tests in the same change.
+
 #### Direct Commands (unchanged fallback)
 ```bash
 cd backend && npm test
@@ -136,7 +148,7 @@ cd frontend && npm test
 - `POST /api/logout` is available as a minimal stateless logout acknowledgement for the current device session.
 - The frontend must clear the stored JWT after sign-out; the backend does not currently revoke issued tokens server-side.
 - Profile editing and password change are deprecated until account management is redesigned and re-scoped.
-- See `backend/session.test.js` for test coverage and prioritization.
+- See `backend/__tests__/session.test.js` for test coverage and prioritization.
 
 See `docs/test_coverage_prioritization.md` for details.
 
@@ -151,6 +163,18 @@ See `docs/test_coverage_prioritization.md` for details.
 - `GET /api/recurring-obligations` returns read-only recurring obligations detected from booked linked-account transactions.
 - The dashboard now switches from seeded prototype recurring data to sourced recurring obligations when the mocked bank-linked feed provides enough evidence.
 - Dashboard responses include recurring-data source metadata so bank-linked behaviour and prototype fallback can be distinguished cleanly.
+
+### Available Funds Formula And Fallback Rules
+
+- Available funds are calculated with the formula: `availableFunds = income - recurringBills - flexibleSpending`.
+- All internal calculations use GBP minor units and are converted to major units only in API responses.
+- `income` includes monthly baseline income plus one-time income entries.
+- `recurringBills` uses sourced linked obligations when `recurringDataSource.status` is `active`; otherwise it falls back to seeded prototype recurring payments.
+- `flexibleSpending` includes flexible categories plus one-time expenses.
+- Fallback handling:
+	- `recurringDataSource.status = fallback`: linked data is not yet available, so available funds are estimated from prototype recurring data.
+	- `recurringDataSource.status = degraded`: linked-data persistence is unavailable, so available funds are estimated from prototype recurring data and an issue is exposed in `recurringDataSource`.
+	- `recurringDataSource.status = active`: linked obligations are available and used directly.
 
 ### One-Time Expenses And Income
 

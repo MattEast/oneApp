@@ -43,6 +43,12 @@
 - Future implementation work should follow the target stack in `docs/TECH_STACK.md`.
 - When the prototype is replaced, migrate frontend tests to Vitest while preserving existing coverage intent and customer-journey priorities.
 
+## Current Command Baseline
+- Legacy prototype frontend tests run with `npm run test:frontend`.
+- Target web-slice end-to-end tests run with `npm run test:web:e2e`.
+- Full repo regression checks for day-to-day development remain `npm test` plus `npm run test:runtime-smoke`.
+- When changing `apps/web` authentication or dashboard flows, run `npm run test:web:e2e` before merge.
+
 ## Scope Management
 - Maintain a clear list of active, deferred, and deprecated flows in product documentation.
 - Deprecated flows should have lightweight contract tests proving they remain unavailable or explicitly deprecated.
@@ -58,6 +64,16 @@
 - Review test coverage and effectiveness regularly
 - Add/adjust tests based on production issues and customer feedback
 - Feed learnings from retrospectives into this strategy and `docs/task_completion_automation.md` in the same iteration they are discovered
+
+## CI Quality Gate Restoration Plan
+- Current state: lint and prettier checks are non-blocking advisory checks in CI during migration work.
+- Goal state: lint and prettier are blocking required checks for pull requests.
+- Restoration steps:
+   1. Baseline formatting and lint debt in active source directories.
+   2. Apply targeted cleanup batches by area (backend, frontend, docs) with no behavior changes.
+   3. Keep lint/prettier scoped to active project paths while debt is reduced.
+   4. Switch `continue-on-error` off for both checks once cleanup batches are complete.
+   5. Enforce as required branch-protection checks after two stable PR cycles.
 
 ---
 
