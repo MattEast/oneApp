@@ -1,6 +1,8 @@
-const { getOrCreateFinancialProfile } = require('../data/financialStore');
-const { calculateMonthlyAmount } = require('./recurringPaymentsService');
+const { getProfileByUserId } = require('../db/financialProfileStore');
+const { BANK_SYNC_UNAVAILABLE_MESSAGE, isBankSyncUnavailableError } = require('../db/bankSyncStore');
+const { calculateMonthlyAmountMinor } = require('./recurringPaymentsService');
 const { listRecurringObligationsForUser } = require('./recurringObligationsService');
+const { normalizeMinorUnits, toMajorUnits } = require('../utils/money');
 
 const CATEGORY_CONFIG = {
   housing: { name: 'Rent or mortgage', kind: 'Monthly bill' },
@@ -18,44 +20,84 @@ const CATEGORY_CONFIG = {
 };
 
 const PAYMENT_CYCLE_DAYS = 28;
-
-function roundCurrency(value) {
-  return Math.round(value * 100) / 100;
-}
+const AVAILABLE_FUNDS_FORMULA_VERSION = 'available_funds_v1';
 
 function listOneTimeEntries(profile) {
-  return profile.oneTimeEntries || [];
+  return (profile.oneTimeEntries || []).map((entry) => ({
+    ...entry,
+    amount: toMajorUnits(entry.amountMinor)
+  }));
 }
 
 function buildOneTimeTotals(profile) {
   return listOneTimeEntries(profile).reduce((totals, entry) => {
+    const amountMinor = normalizeMinorUnits(entry);
+
     if (entry.type === 'income') {
-      totals.oneTimeIncome += entry.amount;
+      totals.oneTimeIncomeMinor += amountMinor;
     } else {
-      totals.oneTimeExpenses += entry.amount;
+      totals.oneTimeExpensesMinor += amountMinor;
     }
 
     return totals;
-  }, { oneTimeIncome: 0, oneTimeExpenses: 0 });
+  }, { oneTimeIncomeMinor: 0, oneTimeExpensesMinor: 0 });
 }
 
-function buildTotals(profile) {
-  const oneTimeTotals = buildOneTimeTotals(profile);
-  const recurringBills = roundCurrency(
-    profile.recurringPayments.reduce((total, payment) => total + calculateMonthlyAmount(payment), 0)
-  );
-  const flexibleSpending = roundCurrency(
-    profile.flexibleCategories.reduce((total, category) => total + category.amount, 0) + oneTimeTotals.oneTimeExpenses
-  );
-  const income = roundCurrency(profile.monthlyIncome + oneTimeTotals.oneTimeIncome);
+function toSafeMinorUnits(value) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.round(value);
+}
+
+function calculateAvailableFundsMinor({
+  incomeMinor,
+  recurringBillsMinor,
+  flexibleSpendingMinor,
+  recurringDataSource
+}) {
+  const safeIncomeMinor = toSafeMinorUnits(incomeMinor);
+  const safeRecurringBillsMinor = toSafeMinorUnits(recurringBillsMinor);
+  const safeFlexibleSpendingMinor = toSafeMinorUnits(flexibleSpendingMinor);
+  const sourceStatus = recurringDataSource?.status || 'fallback';
+
+  // Formula remains stable across active, fallback, and degraded states.
+  // What changes is the confidence of recurring inputs, exposed in recurringDataSource.
+  const availableFundsMinor = safeIncomeMinor - safeRecurringBillsMinor - safeFlexibleSpendingMinor;
 
   return {
-    income,
-    recurringBills,
-    flexibleSpending,
-    oneTimeIncome: roundCurrency(oneTimeTotals.oneTimeIncome),
-    oneTimeExpenses: roundCurrency(oneTimeTotals.oneTimeExpenses),
-    availableFunds: roundCurrency(income - recurringBills - flexibleSpending)
+    amountMinor: availableFundsMinor,
+    sourceStatus,
+    formulaVersion: AVAILABLE_FUNDS_FORMULA_VERSION
+  };
+}
+
+function buildTotals(profile, recurringDataSource) {
+  const oneTimeTotals = buildOneTimeTotals(profile);
+  const recurringBillsMinor = (profile.recurringPayments || []).reduce(
+    (total, payment) => total + calculateMonthlyAmountMinor(payment),
+    0
+  );
+  const flexibleSpendingMinor = (profile.flexibleCategories || []).reduce(
+    (total, category) => total + normalizeMinorUnits(category),
+    0
+  ) + oneTimeTotals.oneTimeExpensesMinor;
+  const incomeMinor = toSafeMinorUnits(profile.monthlyIncomeMinor) + oneTimeTotals.oneTimeIncomeMinor;
+  const availableFunds = calculateAvailableFundsMinor({
+    incomeMinor,
+    recurringBillsMinor,
+    flexibleSpendingMinor,
+    recurringDataSource
+  });
+
+  return {
+    income: toMajorUnits(incomeMinor),
+    recurringBills: toMajorUnits(recurringBillsMinor),
+    flexibleSpending: toMajorUnits(flexibleSpendingMinor),
+    oneTimeIncome: toMajorUnits(oneTimeTotals.oneTimeIncomeMinor),
+    oneTimeExpenses: toMajorUnits(oneTimeTotals.oneTimeExpensesMinor),
+    availableFunds: toMajorUnits(availableFunds.amountMinor)
   };
 }
 
@@ -68,11 +110,11 @@ function buildCategorySummary(profile) {
       kind: 'Regular payment'
     };
     const existing = groupedRecurringCategories.get(payment.category);
-    const nextAmount = roundCurrency((existing?.amount || 0) + calculateMonthlyAmount(payment));
+    const nextAmountMinor = (existing?.amountMinor || 0) + calculateMonthlyAmountMinor(payment);
 
     groupedRecurringCategories.set(payment.category, {
       name: config.name,
-      amount: nextAmount,
+      amountMinor: nextAmountMinor,
       kind: config.kind
     });
   });
@@ -85,18 +127,26 @@ function buildCategorySummary(profile) {
         kind: 'One-off expense'
       };
       const existing = groupedRecurringCategories.get(entry.category);
-      const nextAmount = roundCurrency((existing?.amount || 0) + entry.amount);
+      const nextAmountMinor = (existing?.amountMinor || 0) + normalizeMinorUnits(entry);
 
       groupedRecurringCategories.set(entry.category, {
         name: config.name,
-        amount: nextAmount,
+        amountMinor: nextAmountMinor,
         kind: config.kind
       });
     });
 
   return [
-    ...Array.from(groupedRecurringCategories.values()),
-    ...profile.flexibleCategories
+    ...Array.from(groupedRecurringCategories.values()).map((category) => ({
+      name: category.name,
+      amount: toMajorUnits(category.amountMinor),
+      kind: category.kind
+    })),
+    ...profile.flexibleCategories.map((category) => ({
+      name: category.name,
+      amount: toMajorUnits(normalizeMinorUnits(category)),
+      kind: category.kind
+    }))
   ];
 }
 
@@ -113,7 +163,10 @@ function buildReminderSummary(profile) {
   const oneTimeExpenseReminders = listOneTimeEntries(profile)
     .filter((entry) => entry.type === 'expense')
     .map((entry) => {
-      const dueDay = new Date(`${entry.transactionDate}T00:00:00.000Z`).getUTCDate();
+      const txDate = entry.transactionDate instanceof Date
+        ? entry.transactionDate
+        : new Date(`${entry.transactionDate}T00:00:00.000Z`);
+      const dueDay = txDate.getUTCDate();
 
       return {
         label: entry.label,
@@ -130,14 +183,35 @@ function buildReminderSummary(profile) {
     .slice(0, 3);
 }
 
-function buildRecurringData(profile, email) {
-  const detectedObligations = listRecurringObligationsForUser(email);
+async function buildRecurringData(profile, email) {
+  let detectedObligations = [];
+
+  try {
+    detectedObligations = await listRecurringObligationsForUser(email);
+  } catch (error) {
+    if (isBankSyncUnavailableError(error)) {
+      return {
+        recurringPayments: profile.recurringPayments,
+        recurringDataSource: {
+          kind: 'prototype_seeded',
+          detectedCount: 0,
+          status: 'degraded',
+          issue: 'bank_sync_unavailable',
+          message: BANK_SYNC_UNAVAILABLE_MESSAGE
+        }
+      };
+    }
+
+    throw error;
+  }
 
   if (detectedObligations.length > 0) {
+    const hasCsvImportSource = detectedObligations.some((obligation) => obligation.source === 'csv_import');
+
     return {
       recurringPayments: detectedObligations,
       recurringDataSource: {
-        kind: 'bank_linked',
+        kind: hasCsvImportSource ? 'csv_import' : 'bank_linked',
         detectedCount: detectedObligations.length,
         status: 'active'
       }
@@ -154,10 +228,18 @@ function buildRecurringData(profile, email) {
   };
 }
 
-function buildDashboardSummary(user) {
-  const displayName = user.fullname.split(' ')[0] || user.fullname;
-  const profile = getOrCreateFinancialProfile(user.email);
-  const recurringData = buildRecurringData(profile, user.email);
+async function buildDashboardSummary(user) {
+  let displayName = '';
+  if (user && user.fullname) {
+    displayName = user.fullname.split(' ')[0] || user.fullname;
+  } else {
+    displayName = '';
+  }
+  const profile = await getProfileByUserId(user.id);
+  if (!profile) {
+    throw new Error('Financial profile not found for user');
+  }
+  const recurringData = await buildRecurringData(profile, user.email);
   const dashboardProfile = {
     ...profile,
     recurringPayments: recurringData.recurringPayments
@@ -170,7 +252,7 @@ function buildDashboardSummary(user) {
       firstName: displayName
     },
     periodLabel: profile.periodLabel,
-    totals: buildTotals(dashboardProfile),
+    totals: buildTotals(dashboardProfile, recurringData.recurringDataSource),
     categories: buildCategorySummary(dashboardProfile),
     reminders: buildReminderSummary(dashboardProfile),
     recurringDataSource: recurringData.recurringDataSource,
@@ -179,5 +261,7 @@ function buildDashboardSummary(user) {
 }
 
 module.exports = {
-  buildDashboardSummary
+  AVAILABLE_FUNDS_FORMULA_VERSION,
+  buildDashboardSummary,
+  calculateAvailableFundsMinor
 };

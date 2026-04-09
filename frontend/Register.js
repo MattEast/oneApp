@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Register.css';
-import { buildApiUrl } from './api';
+import { buildApiUrl, unwrapApiData } from './api';
 import { storeToken } from './auth';
 
 export default function Register() {
@@ -62,7 +62,7 @@ export default function Register() {
         return;
       }
 
-      storeToken(data.token);
+      storeToken(unwrapApiData(data).token);
       navigate('/dashboard');
     } catch (error) {
       setErrors({ form: 'Unable to reach the API. Check that the backend is running.' });

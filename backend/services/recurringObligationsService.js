@@ -1,14 +1,11 @@
-const { getBankSyncTransactions } = require('../data/bankSyncStore');
-const { calculateMonthlyAmount } = require('./recurringPaymentsService');
+const { getBankSyncTransactions } = require('../db/bankSyncStore');
+const { calculateMonthlyAmountMinor } = require('./recurringPaymentsService');
+const { toMajorUnits, toMinorUnits } = require('../utils/money');
 
 const MIN_RECURRING_OCCURRENCES = 2;
 const MIN_INTERVAL_DAYS = 20;
 const MAX_INTERVAL_DAYS = 40;
 const MIN_CONFIDENCE = 0.75;
-
-function roundCurrency(value) {
-  return Math.round(value * 100) / 100;
-}
 
 function normalizeMerchantName(name) {
   return name.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -78,10 +75,18 @@ function getCadence(intervals) {
   return 'monthly';
 }
 
+function inferObligationSource(transactions) {
+  const allCsvSourced = transactions.every((transaction) => `${transaction.transactionId || ''}`.toLowerCase().startsWith('csv_'));
+  return allCsvSourced ? 'csv_import' : 'bank_linked';
+}
+
 function buildConfidence(transactions) {
-  const averageAmount = transactions.reduce((total, transaction) => total + transaction.amount, 0) / transactions.length;
+  const averageAmountMinor = transactions.reduce(
+    (total, transaction) => total + toMinorUnits(transaction.amount),
+    0
+  ) / transactions.length;
   const maxVariance = transactions.reduce((currentMax, transaction) => {
-    const variance = Math.abs(transaction.amount - averageAmount) / averageAmount;
+    const variance = Math.abs(toMinorUnits(transaction.amount) - averageAmountMinor) / averageAmountMinor;
     return Math.max(currentMax, variance);
   }, 0);
 
@@ -140,32 +145,36 @@ function detectRecurringObligationsFromTransactions(transactions) {
       const category = inferCategory(mostRecentTransaction);
       const paymentType = inferPaymentType(mostRecentTransaction, category);
       const cadence = getCadence(intervals);
-      const averageAmount = roundCurrency(
-        sortedTransactions.reduce((total, transaction) => total + transaction.amount, 0) / sortedTransactions.length
+      const source = inferObligationSource(sortedTransactions);
+      const averageAmountMinor = Math.round(
+        sortedTransactions.reduce((total, transaction) => total + toMinorUnits(transaction.amount), 0) / sortedTransactions.length
       );
+      const monthlyAmountMinor = calculateMonthlyAmountMinor({ amountMinor: averageAmountMinor, cadence });
 
       return {
         id: `detected-${groupKey}`,
         label: mostRecentTransaction.merchantName,
-        amount: averageAmount,
+        amountMinor: averageAmountMinor,
+        amount: toMajorUnits(averageAmountMinor),
         cadence,
         paymentType,
         category,
         dueDay: new Date(mostRecentTransaction.bookedAt).getUTCDate(),
-        monthlyAmount: calculateMonthlyAmount({ amount: averageAmount, cadence }),
+        monthlyAmountMinor,
+        monthlyAmount: toMajorUnits(monthlyAmountMinor),
         confidence,
         occurrenceCount: sortedTransactions.length,
-        source: 'bank_linked',
+        source,
         sourceTransactionIds: sortedTransactions.map((transaction) => transaction.transactionId),
         lastSeenAt: mostRecentTransaction.bookedAt
       };
     })
     .filter(Boolean)
-    .sort((left, right) => right.monthlyAmount - left.monthlyAmount);
+    .sort((left, right) => right.monthlyAmountMinor - left.monthlyAmountMinor);
 }
 
-function listRecurringObligationsForUser(email) {
-  return detectRecurringObligationsFromTransactions(getBankSyncTransactions(email));
+async function listRecurringObligationsForUser(email) {
+  return detectRecurringObligationsFromTransactions(await getBankSyncTransactions(email));
 }
 
 module.exports = {

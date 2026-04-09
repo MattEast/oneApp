@@ -40,6 +40,12 @@
 - Future implementation work should follow the target stack in `docs/TECH_STACK.md`.
 - When the prototype is replaced, migrate frontend tests to Vitest while preserving existing coverage intent and customer-journey priorities.
 
+## Current Command Baseline
+- Legacy prototype frontend tests run with `npm run test:frontend`.
+- Target web-slice end-to-end tests run with `npm run test:web:e2e`.
+- Full repo regression checks for day-to-day development remain `npm test` plus `npm run test:runtime-smoke`.
+- When changing `apps/web` authentication or dashboard flows, run `npm run test:web:e2e` before merge.
+
 ## Scope Management
 - Maintain a clear list of active, deferred, and deprecated flows in product documentation.
 - Deprecated flows should have lightweight contract tests proving they remain unavailable or explicitly deprecated.

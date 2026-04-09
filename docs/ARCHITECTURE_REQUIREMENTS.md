@@ -35,7 +35,7 @@ To ensure the project architecture remains aligned with the plan and supports ma
 
 ## 6. Security & Compliance
 - Enforce secure coding practices (e.g., password hashing, input validation).
-- Regularly review and update security requirements (see `backend/security_compliance.test.js`).
+- Regularly review and update security requirements (see `backend/__tests__/security_compliance.test.js`).
 - Treat UK GDPR and the Data Protection Act 2018 as baseline privacy requirements for any live or customer-facing scope.
 - Where product behaviour falls within regulated UK financial or Open Banking journeys, document FCA-facing obligations, consent boundaries, audit expectations, and operational controls before release.
 - Do not describe any feature as production-ready or compliant until the release scope has passed explicit legal, privacy, and security review against applicable UK requirements.

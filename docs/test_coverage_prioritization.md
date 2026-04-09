@@ -47,6 +47,13 @@ This document reflects the current prototype scope. Deprecated flows are kept un
 | Dashboard shows safe empty states                |     2      |   2    |
 | Dashboard supports one-time entry CRUD flows     |     3      |   3    |
 
+## Target Web Slice (apps/web) E2E
+| Test Description                                                     | Complexity | Impact |
+|----------------------------------------------------------------------|------------|--------|
+| Login page authenticates and redirects to dashboard shell            |     2      |   3    |
+| Dashboard shell renders available-funds and due-soon reminder tiles  |     2      |   3    |
+| Sign-out clears session token and routes back to login               |     2      |   3    |
+
 ## Mocked Bank Linking
 | Test Description                                                | Complexity | Impact |
 |-----------------------------------------------------------------|------------|--------|
