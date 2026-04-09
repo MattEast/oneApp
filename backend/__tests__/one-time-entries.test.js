@@ -1,7 +1,6 @@
 const request = require('supertest');
 const express = require('express');
 const registerRoute = require('../register');
-const { resetBankSyncState } = require('../db/bankSyncStore');
 
 async function registerAndLogin(app, {
   fullname = 'One-time Entry User',
@@ -26,7 +25,6 @@ describe('One-time entries', () => {
   let app;
 
   beforeEach(async () => {
-    await resetBankSyncState();
     app = express();
     app.use(express.json());
     app.use('/api/v1', registerRoute);
