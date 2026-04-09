@@ -12,10 +12,12 @@
     "start": "echo \"Use 'npm run dev:backend' or 'npm run dev:frontend'\" && exit 1",
     "dev:backend": "npm --prefix backend start",
     "dev:frontend": "npm --prefix frontend start",
+    "dev:web": "npm --workspace @oneapp/web run dev",
     "test": "npm --prefix backend test && npm --prefix frontend test",
     "test:runtime-smoke": "node ./scripts/runtime-smoke.js",
     "test:backend": "npm --prefix backend test",
     "test:frontend": "npm --prefix frontend test",
+    "test:web:e2e": "npm --workspace @oneapp/web run test:e2e",
     "lint:contracts": "npm --prefix packages/contracts run validate && npm --prefix packages/contracts run check:drift"
   },
   "devDependencies": {
