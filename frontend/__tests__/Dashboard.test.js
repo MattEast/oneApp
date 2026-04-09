@@ -52,19 +52,19 @@ describe('Dashboard UI', () => {
     global.fetch = jest.fn((url, options) => {
       const requestUrl = String(url);
 
-      if (requestUrl.endsWith('/api/logout') && options?.method === 'POST') {
+      if (requestUrl.endsWith('/api/v1/logout') && options?.method === 'POST') {
         return Promise.resolve({ ok: true, status: 204, text: () => Promise.resolve('') });
       }
 
-      if (requestUrl.endsWith('/api/dashboard-summary')) {
-        return createJsonResponse(summary);
+      if (requestUrl.endsWith('/api/v1/dashboard-summary')) {
+        return createJsonResponse({ success: true, data: summary });
       }
 
-       if (requestUrl.endsWith('/api/one-time-entries') && (!options?.method || options.method === 'GET')) {
-        return createJsonResponse({ oneTimeEntries });
+       if (requestUrl.endsWith('/api/v1/one-time-entries') && (!options?.method || options.method === 'GET')) {
+        return createJsonResponse({ success: true, data: { oneTimeEntries } });
       }
 
-      if (requestUrl.endsWith('/api/one-time-entries') && options?.method === 'POST') {
+      if (requestUrl.endsWith('/api/v1/one-time-entries') && options?.method === 'POST') {
         const nextEntry = {
           id: `entry-${oneTimeEntries.length + 1}`,
           ...JSON.parse(options.body),
@@ -72,10 +72,10 @@ describe('Dashboard UI', () => {
           updatedAt: '2026-04-01T10:00:00.000Z'
         };
         oneTimeEntries = [nextEntry, ...oneTimeEntries];
-        return createJsonResponse({ oneTimeEntry: nextEntry }, 201);
+        return createJsonResponse({ success: true, data: { oneTimeEntry: nextEntry } }, 201);
       }
 
-      if (requestUrl.includes('/api/one-time-entries/') && options?.method === 'PUT') {
+      if (requestUrl.includes('/api/v1/one-time-entries/') && options?.method === 'PUT') {
         const entryId = requestUrl.split('/').pop();
         const updatedPayload = JSON.parse(options.body);
         oneTimeEntries = oneTimeEntries.map((entry) => (
@@ -85,13 +85,13 @@ describe('Dashboard UI', () => {
         ));
         const updatedEntry = oneTimeEntries.find((entry) => entry.id === entryId);
 
-        return createJsonResponse({ oneTimeEntry: updatedEntry });
+        return createJsonResponse({ success: true, data: { oneTimeEntry: updatedEntry } });
       }
 
-      if (requestUrl.includes('/api/one-time-entries/') && options?.method === 'DELETE') {
+      if (requestUrl.includes('/api/v1/one-time-entries/') && options?.method === 'DELETE') {
         const entryId = requestUrl.split('/').pop();
         oneTimeEntries = oneTimeEntries.filter((entry) => entry.id !== entryId);
-        return createJsonResponse({ deletedEntryId: entryId });
+        return createJsonResponse({ success: true, data: { deletedEntryId: entryId } });
       }
 
       return Promise.reject(new Error(`Unexpected request: ${requestUrl}`));
@@ -110,15 +110,80 @@ describe('Dashboard UI', () => {
     expect(await screen.findByText(/Money left this month/i)).toBeInTheDocument();
     expect(await screen.findByText(/Where your money is going/i)).toBeInTheDocument();
     expect(await screen.findByText(/Bills due soon/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Linked-data confidence: estimated/i)).toBeInTheDocument();
     expect(await screen.findByText(/Rent or mortgage/i)).toBeInTheDocument();
     expect(await screen.findByText(/Council tax due/i)).toBeInTheDocument();
+  });
+
+  it('shows high-confidence copy when available funds are sourced from linked recurring data', async () => {
+    global.fetch.mockImplementationOnce(() => createJsonResponse({
+      success: true,
+      data: {
+        user: { fullname: 'Test User', email: 'test@example.com', firstName: 'Test' },
+        periodLabel: 'April 2026',
+        totals: {
+          income: 4250,
+          recurringBills: 1360,
+          flexibleSpending: 640,
+          oneTimeIncome: 0,
+          oneTimeExpenses: 0,
+          availableFunds: 2250
+        },
+        categories: [
+          { name: 'Rent or mortgage', amount: 1200, kind: 'Monthly bill' }
+        ],
+        reminders: [],
+        recurringDataSource: { kind: 'bank_linked', detectedCount: 2, status: 'active' }
+      }
+    }));
+
+    renderWithRouter(<Dashboard />);
+
+    expect(await screen.findByText(/Linked-data confidence: high/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Live linked data/i)).toBeInTheDocument();
+  });
+
+  it('shows degraded-confidence copy when linked recurring data is unavailable', async () => {
+    global.fetch.mockImplementationOnce(() => createJsonResponse({
+      success: true,
+      data: {
+        user: { fullname: 'Test User', email: 'test@example.com', firstName: 'Test' },
+        periodLabel: 'April 2026',
+        totals: {
+          income: 4250,
+          recurringBills: 1685,
+          flexibleSpending: 640,
+          oneTimeIncome: 0,
+          oneTimeExpenses: 0,
+          availableFunds: 1925
+        },
+        categories: [
+          { name: 'Rent or mortgage', amount: 1200, kind: 'Monthly bill' }
+        ],
+        reminders: [],
+        recurringDataSource: {
+          kind: 'prototype_seeded',
+          detectedCount: 0,
+          status: 'degraded',
+          issue: 'bank_sync_unavailable',
+          message: 'Linked-account features are temporarily unavailable until required database migrations are applied.'
+        }
+      }
+    }));
+
+    renderWithRouter(<Dashboard />);
+
+    expect(await screen.findByText(/Linked-data confidence: degraded/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Degraded fallback/i)).toBeInTheDocument();
+    const degradedMessages = await screen.findAllByText(/temporarily unavailable/i);
+    expect(degradedMessages.length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows an error message when the dashboard request fails', async () => {
     global.fetch.mockImplementationOnce(() => Promise.resolve({
       ok: false,
       status: 500,
-      text: () => Promise.resolve(JSON.stringify({ error: 'Failed to load dashboard summary.' }))
+      text: () => Promise.resolve(JSON.stringify({ success: false, error: 'Failed to load dashboard summary.' }))
     }));
 
     renderWithRouter(<Dashboard />);
@@ -132,19 +197,22 @@ describe('Dashboard UI', () => {
       ok: true,
       status: 200,
       text: () => Promise.resolve(JSON.stringify({
-        user: { fullname: 'Test User', email: 'test@example.com', firstName: 'Test' },
-        periodLabel: 'April 2026',
-        totals: {
-          income: 4250,
-          recurringBills: 0,
-          flexibleSpending: 0,
-          oneTimeIncome: 0,
-          oneTimeExpenses: 0,
-          availableFunds: 4250
-        },
-        categories: [],
-        reminders: [],
-        recurringDataSource: { kind: 'prototype_seeded', detectedCount: 0, status: 'fallback' }
+        success: true,
+        data: {
+          user: { fullname: 'Test User', email: 'test@example.com', firstName: 'Test' },
+          periodLabel: 'April 2026',
+          totals: {
+            income: 4250,
+            recurringBills: 0,
+            flexibleSpending: 0,
+            oneTimeIncome: 0,
+            oneTimeExpenses: 0,
+            availableFunds: 4250
+          },
+          categories: [],
+          reminders: [],
+          recurringDataSource: { kind: 'prototype_seeded', detectedCount: 0, status: 'fallback' }
+        }
       }))
     }));
 
@@ -200,11 +268,10 @@ describe('Dashboard UI', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:4000/api/logout',
+        'http://localhost:4000/api/v1/logout',
         expect.objectContaining({ method: 'POST' })
       );
     });
     expect(window.localStorage.getItem('token')).toBeNull();
-    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 });

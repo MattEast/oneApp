@@ -1,4 +1,6 @@
-const { getOrCreateFinancialProfile, updateFinancialProfile } = require('../data/financialStore');
+const { getProfileByUserId } = require('../db/financialProfileStore');
+const prisma = require('../db/prisma');
+const { toMajorUnits, toMinorUnits } = require('../utils/money');
 
 const ENTRY_TYPES = new Set(['expense', 'income']);
 const EXPENSE_CATEGORIES = new Set([
@@ -71,7 +73,7 @@ function normalizeOneTimeEntry(input) {
     value: {
       label,
       type,
-      amount: Math.round(amount * 100) / 100,
+      amountMinor: toMinorUnits(amount),
       transactionDate,
       category,
       notes
@@ -81,108 +83,106 @@ function normalizeOneTimeEntry(input) {
 
 function sortEntries(entries) {
   return [...entries].sort((left, right) => {
-    const dateSort = right.transactionDate.localeCompare(left.transactionDate);
+    const leftDate = left.transactionDate instanceof Date ? left.transactionDate.toISOString() : left.transactionDate;
+    const rightDate = right.transactionDate instanceof Date ? right.transactionDate.toISOString() : right.transactionDate;
+    const dateSort = rightDate.localeCompare(leftDate);
 
     if (dateSort !== 0) {
       return dateSort;
     }
 
-    return right.createdAt.localeCompare(left.createdAt);
+    const leftCreated = left.createdAt instanceof Date ? left.createdAt.toISOString() : left.createdAt;
+    const rightCreated = right.createdAt instanceof Date ? right.createdAt.toISOString() : right.createdAt;
+    return rightCreated.localeCompare(leftCreated);
   });
 }
 
-function listOneTimeEntriesForUser(email) {
-  const profile = getOrCreateFinancialProfile(email);
-
-  return sortEntries(profile.oneTimeEntries || []);
-}
-
-function createOneTimeEntryForUser(email, input) {
-  const normalized = normalizeOneTimeEntry(input);
-
-  if (normalized.error) {
-    return normalized;
-  }
-
-  const timestamp = new Date().toISOString();
-  const nextEntry = {
-    id: `one-time-${oneTimeEntrySequence++}`,
-    ...normalized.value,
-    createdAt: timestamp,
-    updatedAt: timestamp
+function serializeEntry(entry) {
+  const txDate = entry.transactionDate instanceof Date
+    ? entry.transactionDate.toISOString().slice(0, 10)
+    : entry.transactionDate;
+  return {
+    ...entry,
+    transactionDate: txDate,
+    amount: toMajorUnits(entry.amountMinor)
   };
-
-  updateFinancialProfile(email, (profile) => ({
-    ...profile,
-    oneTimeEntries: sortEntries([...(profile.oneTimeEntries || []), nextEntry])
-  }));
-
-  return { value: nextEntry };
 }
 
-function updateOneTimeEntryForUser(email, entryId, input) {
-  const normalized = normalizeOneTimeEntry(input);
+async function listOneTimeEntriesForUser(userId) {
+  try {
+    const profile = await getProfileByUserId(userId);
+    if (!profile) return [];
+    return sortEntries(profile.oneTimeEntries || []).map(serializeEntry);
+  } catch (err) {
+    console.error('Error in listOneTimeEntriesForUser:', err);
+    throw new Error('Database error');
+  }
+}
 
+async function createOneTimeEntryForUser(userId, input) {
+  const normalized = normalizeOneTimeEntry(input);
   if (normalized.error) {
     return normalized;
   }
-
-  let updatedEntry = null;
-
-  const nextProfile = updateFinancialProfile(email, (profile) => {
-    const existingEntries = profile.oneTimeEntries || [];
-    const entryIndex = existingEntries.findIndex((entry) => entry.id === entryId);
-
-    if (entryIndex === -1) {
-      return profile;
+  try {
+    // Look up the user's profile by userId (which is the user's id/UUID)
+    const profile = await getProfileByUserId(userId);
+    if (!profile) {
+      return { error: 'User profile not found.' };
     }
-
-    updatedEntry = {
-      ...existingEntries[entryIndex],
-      ...normalized.value,
-      updatedAt: new Date().toISOString()
-    };
-
-    const nextEntries = [...existingEntries];
-    nextEntries[entryIndex] = updatedEntry;
-
-    return {
-      ...profile,
-      oneTimeEntries: sortEntries(nextEntries)
-    };
-  });
-
-  if (!updatedEntry || !(nextProfile.oneTimeEntries || []).some((entry) => entry.id === entryId)) {
-    return { error: 'One-time entry not found.', statusCode: 404 };
+    const entry = await prisma.oneTimeEntry.create({
+      data: {
+        ...normalized.value,
+        transactionDate: new Date(normalized.value.transactionDate + 'T00:00:00.000Z'),
+        profileId: profile.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+    return { value: serializeEntry(entry) };
+  } catch (err) {
+    console.error('Error in createOneTimeEntryForUser:', err);
+    throw new Error('Database error');
   }
-
-  return { value: updatedEntry };
 }
 
-function removeOneTimeEntryForUser(email, entryId) {
-  let removedEntry = null;
-
-  const nextProfile = updateFinancialProfile(email, (profile) => {
-    const existingEntries = profile.oneTimeEntries || [];
-    const entryToRemove = existingEntries.find((entry) => entry.id === entryId);
-
-    if (!entryToRemove) {
-      return profile;
-    }
-
-    removedEntry = entryToRemove;
-
-    return {
-      ...profile,
-      oneTimeEntries: existingEntries.filter((entry) => entry.id !== entryId)
-    };
-  });
-
-  if (!removedEntry || (nextProfile.oneTimeEntries || []).some((entry) => entry.id === entryId)) {
-    return { error: 'One-time entry not found.', statusCode: 404 };
+async function updateOneTimeEntryForUser(userId, entryId, input) {
+  const normalized = normalizeOneTimeEntry(input);
+  if (normalized.error) {
+    return normalized;
   }
+  try {
+    const entry = await prisma.oneTimeEntry.update({
+      where: { id: entryId },
+      data: {
+        ...normalized.value,
+        transactionDate: new Date(normalized.value.transactionDate + 'T00:00:00.000Z'),
+        updatedAt: new Date()
+      }
+    });
+    return { value: serializeEntry(entry) };
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return { error: 'One-time entry not found.', statusCode: 404 };
+    }
+    console.error('Error in updateOneTimeEntryForUser:', err);
+    return { error: 'Database error', statusCode: 500 };
+  }
+}
 
-  return { value: removedEntry };
+async function removeOneTimeEntryForUser(userId, entryId) {
+  try {
+    const entry = await prisma.oneTimeEntry.delete({
+      where: { id: entryId }
+    });
+    return { value: entry };
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return { error: 'One-time entry not found.', statusCode: 404 };
+    }
+    console.error('Error in removeOneTimeEntryForUser:', err);
+    return { error: 'Database error', statusCode: 500 };
+  }
 }
 
 module.exports = {

@@ -1,14 +1,24 @@
-function calculateMonthlyAmount(payment) {
+const { normalizeMinorUnits, toMajorUnits } = require('../utils/money');
+
+function calculateMonthlyAmountMinor(payment) {
+  const amountMinor = normalizeMinorUnits(payment);
+
   if (payment.cadence === 'four_weekly') {
-    return Math.round(((payment.amount * 13) / 12) * 100) / 100;
+    return Math.round((amountMinor * 13) / 12);
   }
 
   if (payment.cadence === 'quarterly') {
-    return Math.round((payment.amount / 3) * 100) / 100;
+    return Math.round(amountMinor / 3);
   }
 
-  return payment.amount;
+  return amountMinor;
 }
+
+function calculateMonthlyAmount(payment) {
+  return toMajorUnits(calculateMonthlyAmountMinor(payment));
+}
+
 module.exports = {
+  calculateMonthlyAmountMinor,
   calculateMonthlyAmount
 };

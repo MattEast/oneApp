@@ -48,9 +48,12 @@ describe('Register Component', () => {
     global.fetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({
-        token: 'token-123',
-        expiresIn: 3600,
-        user: { fullname: 'Test User', email: 'test@example.com' }
+        success: true,
+        data: {
+          token: 'token-123',
+          expiresIn: 3600,
+          user: { fullname: 'Test User', email: 'test@example.com' }
+        }
       })
     });
 
@@ -69,7 +72,7 @@ describe('Register Component', () => {
   test('shows backend errors for duplicate emails', async () => {
     global.fetch.mockResolvedValue({
       ok: false,
-      json: () => Promise.resolve({ error: 'An account with this email already exists.' })
+      json: () => Promise.resolve({ success: false, error: 'An account with this email already exists.' })
     });
 
     renderRegister();

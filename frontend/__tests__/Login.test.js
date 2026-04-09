@@ -38,9 +38,12 @@ describe('Login form', () => {
     global.fetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({
-        token: 'login-token',
-        expiresIn: 3600,
-        user: { fullname: 'Integration User', email: 'integration@example.com' }
+        success: true,
+        data: {
+          token: 'login-token',
+          expiresIn: 3600,
+          user: { fullname: 'Integration User', email: 'integration@example.com' }
+        }
       })
     });
 
@@ -57,7 +60,7 @@ describe('Login form', () => {
   it('shows invalid credentials from the API', async () => {
     global.fetch.mockResolvedValue({
       ok: false,
-      json: () => Promise.resolve({ error: 'Invalid credentials.' })
+      json: () => Promise.resolve({ success: false, error: 'Invalid credentials.' })
     });
 
     renderLogin();
