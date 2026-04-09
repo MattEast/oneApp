@@ -14,10 +14,23 @@ const apiResponse = require('../utils/apiResponse');
 const { sendInvalidSession } = require('../utils/httpResponses');
 
 const router = express.Router();
+const MAX_CSV_UPLOAD_BYTES = 1024 * 1024;
+const ALLOWED_CSV_MIME_TYPES = new Set(['text/csv', 'text/plain', 'application/vnd.ms-excel']);
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 1024 * 1024
+    fileSize: MAX_CSV_UPLOAD_BYTES
+  },
+  fileFilter: (req, file, callback) => {
+    if (ALLOWED_CSV_MIME_TYPES.has(file.mimetype)) {
+      callback(null, true);
+      return;
+    }
+
+    const error = new Error('Only CSV uploads are supported.');
+    error.code = 'INVALID_CSV_FILE_TYPE';
+    callback(error);
   }
 });
 
@@ -77,7 +90,43 @@ router.post('/mock-ingest', authenticateJWT, async (req, res) => {
   return apiResponse.success(res, result.value, statusCode);
 });
 
-router.post('/csv-import', authenticateJWT, upload.single('file'), async (req, res) => {
+router.post('/csv-import', authenticateJWT, (req, res, next) => {
+  upload.single('file')(req, res, (error) => {
+    if (!error) {
+      next();
+      return;
+    }
+
+    if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
+      logWarn('bank_sync.csv_import.rejected', {
+        email: maskEmail(req.user?.email || ''),
+        reason: 'csv_upload_too_large',
+        maxBytes: MAX_CSV_UPLOAD_BYTES
+      });
+      return apiResponse.error(
+        res,
+        'CSV upload exceeds the maximum upload size.',
+        413,
+        { maxBytes: MAX_CSV_UPLOAD_BYTES, field: error.field || 'file' }
+      );
+    }
+
+    if (error.code === 'INVALID_CSV_FILE_TYPE') {
+      logWarn('bank_sync.csv_import.rejected', {
+        email: maskEmail(req.user?.email || ''),
+        reason: 'csv_upload_invalid_type'
+      });
+      return apiResponse.error(
+        res,
+        'CSV file type is required for multipart uploads.',
+        415,
+        { acceptedMimeTypes: Array.from(ALLOWED_CSV_MIME_TYPES) }
+      );
+    }
+
+    return apiResponse.error(res, 'CSV upload could not be processed.', 400);
+  });
+}, async (req, res) => {
   const user = await findCurrentUser(req);
   if (!user) return sendInvalidSession(res);
 
