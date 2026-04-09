@@ -24,6 +24,12 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v5
+      - name: Guard against tracked node_modules
+        run: |
+          if git ls-files | grep -E '(^|/)node_modules/'; then
+            echo "Tracked node_modules files detected. Remove them from git index and rely on .gitignore."
+            exit 1
+          fi
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
