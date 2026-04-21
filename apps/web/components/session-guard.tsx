@@ -60,7 +60,7 @@ export function SessionGuard({ children }: SessionGuardProps) {
   return (
     <>
       {state === 'expiring-soon' && remainingMs !== null ? (
-        <div className="session-warning-banner" role="alert">
+        <div className="session-warning-banner" role="alert" aria-label="Sign out now">
           <span>
             Your session expires in {formatTimeRemaining(remainingMs)}. Save any changes and sign in again to continue.
           </span>
