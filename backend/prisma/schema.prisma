@@ -76,9 +76,13 @@ model BankSyncProfile {
   providerDisplayName String
   providerStrategy    Json
   consent             Json
+  providerTokens      Json?
   linkedAccount       Json?
+  lastSyncAt          DateTime?
+  syncCheckpoint      Json?
   transactions        BankSyncTransaction[]
   syncHistory         BankSyncSyncSummary[]
+  syncJobs            SyncJob[]
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 }
@@ -114,4 +118,26 @@ model BankSyncSyncSummary {
   duplicateTransactionIds Json
   rejectedTransactions  Json
   createdAt             DateTime        @default(now())
+}
+
+model SyncJob {
+  id            String   @id @default(uuid())
+  profile       BankSyncProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId     String
+  jobType       String
+  status        String   @default("pending")
+  attempt       Int      @default(0)
+  maxAttempts   Int      @default(5)
+  lastError     String?
+  scheduledAt   DateTime @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  nextRetryAt   DateTime?
+  syncCheckpoint Json?
+  result        Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([profileId, status])
+  @@index([status, scheduledAt])
 }

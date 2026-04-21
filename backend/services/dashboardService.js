@@ -2,6 +2,7 @@ const { getProfileByUserId } = require('../db/financialProfileStore');
 const { BANK_SYNC_UNAVAILABLE_MESSAGE, isBankSyncUnavailableError } = require('../db/bankSyncStore');
 const { calculateMonthlyAmountMinor } = require('./recurringPaymentsService');
 const { listRecurringObligationsForUser } = require('./recurringObligationsService');
+const { getLiveSyncStatus } = require('./liveBankSyncService');
 const { normalizeMinorUnits, toMajorUnits } = require('../utils/money');
 
 const CATEGORY_CONFIG = {
@@ -21,6 +22,7 @@ const CATEGORY_CONFIG = {
 
 const PAYMENT_CYCLE_DAYS = 28;
 const AVAILABLE_FUNDS_FORMULA_VERSION = 'available_funds_v1';
+const DAILY_LIMIT_FORMULA_VERSION = 'daily_limit_v1';
 
 function listOneTimeEntries(profile) {
   return (profile.oneTimeEntries || []).map((entry) => ({
@@ -70,6 +72,26 @@ function calculateAvailableFundsMinor({
     amountMinor: availableFundsMinor,
     sourceStatus,
     formulaVersion: AVAILABLE_FUNDS_FORMULA_VERSION
+  };
+}
+
+function calculateDailySpendingLimit({ availableFundsMinor, referenceDayOfMonth }) {
+  const referenceDay = referenceDayOfMonth || 1;
+  const today = new Date();
+  const currentDay = today.getUTCDate();
+  const remainingDays = currentDay >= referenceDay
+    ? PAYMENT_CYCLE_DAYS - (currentDay - referenceDay)
+    : referenceDay - currentDay;
+
+  const safeDays = Math.max(remainingDays, 1);
+  const safeAvailable = Math.max(availableFundsMinor, 0);
+  const dailyLimitMinor = Math.floor(safeAvailable / safeDays);
+
+  return {
+    amountMinor: dailyLimitMinor,
+    remainingDays: safeDays,
+    availableFundsMinor: safeAvailable,
+    formulaVersion: DAILY_LIMIT_FORMULA_VERSION
   };
 }
 
@@ -207,11 +229,20 @@ async function buildRecurringData(profile, email) {
 
   if (detectedObligations.length > 0) {
     const hasCsvImportSource = detectedObligations.some((obligation) => obligation.source === 'csv_import');
+    const hasBankLinkedSource = detectedObligations.some((obligation) => obligation.source === 'bank_linked');
+
+    let kind = 'bank_linked';
+
+    if (hasCsvImportSource && hasBankLinkedSource) {
+      kind = 'mixed';
+    } else if (hasCsvImportSource) {
+      kind = 'csv_import';
+    }
 
     return {
       recurringPayments: detectedObligations,
       recurringDataSource: {
-        kind: hasCsvImportSource ? 'csv_import' : 'bank_linked',
+        kind,
         detectedCount: detectedObligations.length,
         status: 'active'
       }
@@ -244,6 +275,31 @@ async function buildDashboardSummary(user) {
     ...profile,
     recurringPayments: recurringData.recurringPayments
   };
+  const totals = buildTotals(dashboardProfile, recurringData.recurringDataSource);
+  const dailyLimit = calculateDailySpendingLimit({
+    availableFundsMinor: Math.round(totals.availableFunds * 100),
+    referenceDayOfMonth: profile.referenceDayOfMonth
+  });
+  let linkedDataFreshness = null;
+
+  try {
+    const liveStatus = await getLiveSyncStatus(user.email);
+
+    if (liveStatus.liveSync?.linked || liveStatus.linkedDataFreshness?.status === 'unavailable') {
+      linkedDataFreshness = liveStatus.linkedDataFreshness;
+    }
+  } catch (error) {
+    if (!isBankSyncUnavailableError(error)) {
+      throw error;
+    }
+
+    linkedDataFreshness = {
+      status: 'unavailable',
+      lagMinutes: null,
+      lastSuccessfulSyncAt: null,
+      lastWebhookAt: null
+    };
+  }
 
   return {
     user: {
@@ -252,16 +308,25 @@ async function buildDashboardSummary(user) {
       firstName: displayName
     },
     periodLabel: profile.periodLabel,
-    totals: buildTotals(dashboardProfile, recurringData.recurringDataSource),
+    totals,
+    dailySpendingLimit: {
+      amount: toMajorUnits(dailyLimit.amountMinor),
+      remainingDays: dailyLimit.remainingDays,
+      availableFundsUsed: toMajorUnits(dailyLimit.availableFundsMinor),
+      formulaVersion: dailyLimit.formulaVersion
+    },
     categories: buildCategorySummary(dashboardProfile),
     reminders: buildReminderSummary(dashboardProfile),
     recurringDataSource: recurringData.recurringDataSource,
+    linkedDataFreshness,
     oneTimeEntries: listOneTimeEntries(profile)
   };
 }
 
 module.exports = {
   AVAILABLE_FUNDS_FORMULA_VERSION,
+  DAILY_LIMIT_FORMULA_VERSION,
   buildDashboardSummary,
-  calculateAvailableFundsMinor
+  calculateAvailableFundsMinor,
+  calculateDailySpendingLimit
 };

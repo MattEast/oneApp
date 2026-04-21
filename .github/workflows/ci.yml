@@ -34,10 +34,8 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '20'
-      - name: Install backend dependencies
-        run: |
-          cd backend
-          npm install
+      - name: Install workspace dependencies
+        run: npm install
       - name: Run Prisma migrations
         run: |
           cd backend
@@ -48,17 +46,15 @@ jobs:
         run: |
           cd backend
           npm test
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm install
-      - name: Run frontend tests
-        run: |
-          cd frontend
-          npm test
       - name: Run runtime smoke check
         run: |
           npm run test:runtime-smoke
+        env:
+          DATABASE_URL: postgresql://postgres@localhost:5432/oneapp_test
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: Run web e2e tests
+        run: npm run test:web:e2e
         env:
           DATABASE_URL: postgresql://postgres@localhost:5432/oneapp_test
       - name: Run contract validation and drift checks
@@ -67,7 +63,7 @@ jobs:
       - name: Run ESLint
         continue-on-error: true
         run: |
-          npx --yes eslint@8.57.1 backend frontend
+          npx --yes eslint@8.57.1 backend
       - name: Run Prettier check
         continue-on-error: true
         run: |

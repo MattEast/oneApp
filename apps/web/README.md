@@ -8,4 +8,4 @@ Planned stack:
 - TypeScript
 
 Current status:
-- Placeholder scaffold only. Current prototype UI remains in frontend/.
+- Active target-state web application with register, sign-in, and authenticated dashboard.

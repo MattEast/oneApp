@@ -173,14 +173,14 @@ describe('One-time entries', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.statusCode).toBe(200);
-    expect(response.body.data.totals.income).toBe(4550);
-    expect(response.body.data.totals.flexibleSpending).toBe(915);
+    expect(response.body.data.totals.income).toBe(300);
+    expect(response.body.data.totals.flexibleSpending).toBe(275);
     expect(response.body.data.totals.oneTimeIncome).toBe(300);
     expect(response.body.data.totals.oneTimeExpenses).toBe(275);
-    expect(response.body.data.totals.availableFunds).toBe(1950);
+    expect(response.body.data.totals.availableFunds).toBe(25);
     expect(response.body.data.categories).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: 'Council tax and household bills', amount: 555 })
+        expect.objectContaining({ name: 'Council tax and household bills', amount: 275 })
       ])
     );
     expect(response.body.data.reminders).toEqual(
@@ -223,6 +223,6 @@ describe('One-time entries', () => {
 
     expect(dashboardResponse.statusCode).toBe(200);
     expect(dashboardResponse.body.data.totals.oneTimeIncome).toBe(0.3);
-    expect(dashboardResponse.body.data.totals.income).toBe(4250.3);
+    expect(dashboardResponse.body.data.totals.income).toBe(0.3);
   });
 });

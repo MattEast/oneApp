@@ -39,13 +39,13 @@
 - If frontend tests mock network calls, pair them with backend real-HTTP checks so service availability and endpoint wiring are still validated
 
 ## Tooling Transition
-- The current prototype may still contain Jest-based tests.
-- Future implementation work should follow the target stack in `docs/TECH_STACK.md`.
-- When the prototype is replaced, migrate frontend tests to Vitest while preserving existing coverage intent and customer-journey priorities.
+- The legacy React/Parcel frontend has been removed. All frontend development targets `apps/web/` (Next.js).
+- Future frontend implementation work should follow the target stack in `docs/TECH_STACK.md`.
+- Frontend tests should use Vitest and Testing Library for unit/integration and Playwright for end-to-end customer journeys.
 
 ## Current Command Baseline
-- Legacy prototype frontend tests run with `npm run test:frontend`.
-- Target web-slice end-to-end tests run with `npm run test:web:e2e`.
+- Backend tests run with `npm run test:backend`.
+- Target web end-to-end tests run with `npm run test:web:e2e`.
 - Full repo regression checks for day-to-day development remain `npm test` plus `npm run test:runtime-smoke`.
 - When changing `apps/web` authentication or dashboard flows, run `npm run test:web:e2e` before merge.
 

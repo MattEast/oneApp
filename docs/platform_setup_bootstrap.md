@@ -12,7 +12,7 @@ This document defines the initial target monorepo foundation while preserving th
 - packages/config: shared lint, test, and tool config boundary
 - infra: infrastructure-as-code boundary
 - backend: active prototype API implementation (current)
-- frontend: active prototype frontend implementation (current)
+- apps/web: active customer web implementation (current)
 
 ## Bootstrap Commands
 
@@ -26,14 +26,14 @@ Run from repository root.
 
    npm run dev:backend
 
-3. Start active prototype frontend:
+3. Start active web app:
 
-   npm run dev:frontend
+   npm run dev:web
 
 4. Run current test suites:
 
    npm run test:backend
-   npm run test:frontend
+   npm run test:web:e2e
 
 5. Run baseline contract validation check:
 
@@ -42,9 +42,9 @@ Run from repository root.
 ## Environment Notes
 
 - Active prototype API port: 4000
-- Active prototype frontend port: 3000
+- Active web app port: 3001
 - Current local demo account is documented in docs/README.md
-- The new apps/* and packages/* directories are scaffold boundaries only and do not replace backend/ or frontend/ yet.
+- The new apps/* and packages/* directories are scaffold boundaries; backend and apps/web remain active runtime surfaces.
 
 ## Shared Configuration Boundaries
 
@@ -55,6 +55,6 @@ Run from repository root.
 
 ## Migration Guardrails
 
-- Do not remove or break backend/ and frontend/ until replacement paths are documented and tested.
+- Do not remove or break backend/ and apps/web until replacement paths are documented and tested.
 - Any route or schema change must update docs/openapi.yaml and tests in the same change.
 - Keep deprecated prototype flows explicitly deprecated until redesign criteria are met.

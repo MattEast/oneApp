@@ -48,31 +48,20 @@ async function updateProfile(userId, data) {
 }
 
 async function seedDefaultProfile(userId) {
-  const { toMinorUnits } = require('../utils/money');
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const now = new Date();
+  const periodLabel = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+
   try {
     return await prisma.financialProfile.create({
       data: {
         userId,
-        monthlyIncomeMinor: toMinorUnits(4250),
+        monthlyIncomeMinor: 0,
         referenceDayOfMonth: 1,
-        periodLabel: 'April 2026',
-        flexibleCategories: {
-          create: [
-            { name: 'Groceries', amountMinor: toMinorUnits(340), kind: 'Flexible' },
-            { name: 'Rail and bus travel', amountMinor: toMinorUnits(90), kind: 'Flexible' },
-            { name: 'Eating out and extras', amountMinor: toMinorUnits(210), kind: 'Flexible' }
-          ]
-        },
-        recurringPayments: {
-          create: [
-            { label: 'Rent', amountMinor: toMinorUnits(1200), cadence: 'monthly', paymentType: 'rent', category: 'housing', dueDay: 12 },
-            { label: 'Council tax', amountMinor: toMinorUnits(160), cadence: 'monthly', paymentType: 'council_tax', category: 'household_bills', dueDay: 3 },
-            { label: 'Energy Direct Debit', amountMinor: toMinorUnits(50), cadence: 'monthly', paymentType: 'direct_debit', category: 'household_bills', dueDay: 6 },
-            { label: 'Water bill', amountMinor: toMinorUnits(35), cadence: 'monthly', paymentType: 'utility_bill', category: 'household_bills', dueDay: 15 },
-            { label: 'Broadband', amountMinor: toMinorUnits(35), cadence: 'monthly', paymentType: 'direct_debit', category: 'household_bills', dueDay: 18 },
-            { label: 'Savings pot transfer', amountMinor: toMinorUnits(205), cadence: 'monthly', paymentType: 'standing_order', category: 'savings', dueDay: 8 }
-          ]
-        }
+        periodLabel
       },
       include: {
         flexibleCategories: true,

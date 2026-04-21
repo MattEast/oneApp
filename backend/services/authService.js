@@ -2,15 +2,13 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { findUserByEmail, createUser, normalizeEmail, updateUserPassword } = require('../db/userStore');
 const { seedDefaultProfile } = require('../db/financialProfileStore');
+const { getJwtSecret } = require('../config/jwtSecret');
 
-const DEMO_EMAIL = 'demo@oneapp.local';
-const DEMO_PASSWORD = 'DemoPass123!';
+const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@oneapp.local';
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD || (process.env.NODE_ENV === 'test' ? 'DemoPass123!' : '');
 const DEMO_FULLNAME = 'Demo Customer';
 
-const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? undefined : 'dev_secret');
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required in production');
-}
+const JWT_SECRET = getJwtSecret();
 
 function buildAuthResponse(user) {
   const payload = { email: user.email, fullname: user.fullname };
@@ -41,7 +39,7 @@ async function registerUser({ fullname, email, password }) {
 }
 
 async function ensurePrototypeDemoUser() {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' || !DEMO_PASSWORD) {
     return;
   }
 
@@ -72,7 +70,7 @@ async function validateUserCredentials({ email, password }) {
   try {
     const normalizedEmail = normalizeEmail(email);
 
-    if (normalizedEmail === DEMO_EMAIL) {
+    if (normalizedEmail === DEMO_EMAIL && DEMO_PASSWORD) {
       await ensurePrototypeDemoUser();
     }
 

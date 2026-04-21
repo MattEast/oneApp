@@ -78,6 +78,7 @@ function inferSyncSource(ingestionId) {
 
 function buildStatus(profile) {
   const latestSync = profile.syncHistory[profile.syncHistory.length - 1] || null;
+  const checkpoint = profile.syncCheckpoint || {};
 
   return {
     provider: profile.provider,
@@ -86,7 +87,16 @@ function buildStatus(profile) {
     consent: cloneValue(profile.consent),
     linkedAccount: cloneValue(profile.linkedAccount),
     transactionCount: profile.transactions.length,
-    latestSync: latestSync ? serializeSyncSummary(latestSync) : null
+    latestSync: latestSync ? serializeSyncSummary(latestSync) : null,
+    lastSyncAt: profile.lastSyncAt ? profile.lastSyncAt.toISOString() : null,
+    webhookState: {
+      lastReceivedAt: checkpoint.lastWebhookAt || null,
+      lastEventId: checkpoint.lastWebhookEventId || null,
+      lastEventType: checkpoint.lastWebhookType || null,
+      lastJobId: checkpoint.lastWebhookJobId || null,
+      lastFallbackPollingAt: checkpoint.lastFallbackPollingAt || null,
+      lastFallbackPollingJobId: checkpoint.lastFallbackPollingJobId || null
+    }
   };
 }
 
@@ -321,6 +331,110 @@ async function resetBankSyncState() {
   await prisma.bankSyncProfile.deleteMany();
 }
 
+async function persistConsentTokens(email, { accessToken, refreshToken, expiresIn, scopes, provider, linkedAccount }) {
+  const profile = await getOrCreateStoredProfile(email);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + (expiresIn * 1000));
+
+  const consentData = {
+    status: 'active',
+    scopes: scopes || ['accounts', 'transactions'],
+    grantedAt: now.toISOString(),
+    expiresAt: expiresAt.toISOString()
+  };
+
+  const tokenData = {
+    accessToken,
+    refreshToken,
+    expiresAt: expiresAt.toISOString(),
+    issuedAt: now.toISOString()
+  };
+
+  const updateData = {
+    provider: provider || SUPPORTED_PROVIDER,
+    providerDisplayName: 'TrueLayer',
+    consent: consentData,
+    providerTokens: tokenData
+  };
+
+  if (linkedAccount) {
+    updateData.linkedAccount = linkedAccount;
+  }
+
+  const updatedProfile = await prisma.bankSyncProfile.update({
+    where: { id: profile.id },
+    data: updateData,
+    include: getProfileInclude()
+  });
+
+  return buildStatus(updatedProfile);
+}
+
+async function getProviderTokens(email) {
+  try {
+    const profile = await getOrCreateStoredProfile(email);
+
+    if (!profile.providerTokens) {
+      return null;
+    }
+
+    return cloneValue(profile.providerTokens);
+  } catch (error) {
+    if (isBankSyncUnavailableError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function updateProviderTokens(email, { accessToken, refreshToken, expiresIn }) {
+  const profile = await getOrCreateStoredProfile(email);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + (expiresIn * 1000));
+
+  await prisma.bankSyncProfile.update({
+    where: { id: profile.id },
+    data: {
+      providerTokens: {
+        accessToken,
+        refreshToken: refreshToken || profile.providerTokens?.refreshToken || null,
+        expiresAt: expiresAt.toISOString(),
+        issuedAt: now.toISOString()
+      }
+    }
+  });
+}
+
+async function updateLastSyncAt(email) {
+  const profile = await getOrCreateStoredProfile(email);
+
+  await prisma.bankSyncProfile.update({
+    where: { id: profile.id },
+    data: { lastSyncAt: new Date() }
+  });
+}
+
+async function revokeConsentState(email) {
+  const profile = await getOrCreateStoredProfile(email);
+
+  await prisma.bankSyncProfile.update({
+    where: { id: profile.id },
+    data: {
+      consent: {
+        status: 'revoked',
+        scopes: [],
+        grantedAt: profile.consent?.grantedAt || null,
+        revokedAt: new Date().toISOString()
+      },
+      providerTokens: null,
+      linkedAccount: null
+    }
+  });
+
+  return { revoked: true };
+}
+
 module.exports = {
   BANK_SYNC_UNAVAILABLE_MESSAGE,
   SUPPORTED_PROVIDER,
@@ -329,7 +443,12 @@ module.exports = {
   getCsvImportHistory,
   getBankSyncTransactions,
   getBankSyncStatus,
+  getProviderTokens,
   ingestMockTransactions,
   isBankSyncUnavailableError,
-  resetBankSyncState
+  persistConsentTokens,
+  resetBankSyncState,
+  revokeConsentState,
+  updateLastSyncAt,
+  updateProviderTokens
 };

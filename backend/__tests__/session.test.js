@@ -56,7 +56,8 @@ describe('Session Management', () => {
       .get('/api/v1/dashboard-summary')
       .set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toBe(200);
-    expect(res.body.data).toHaveProperty('periodLabel', 'April 2026');
+    expect(res.body.data).toHaveProperty('periodLabel');
+    expect(res.body.data.periodLabel).toMatch(/^[A-Z][a-z]+ \d{4}$/);
     expect(res.body.data).toHaveProperty('totals');
     expect(res.body.data).toHaveProperty('categories');
   });

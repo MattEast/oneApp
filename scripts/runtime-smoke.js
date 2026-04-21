@@ -175,12 +175,9 @@ function stopProcess(child) {
 
 async function run() {
   const repoRoot = path.resolve(__dirname, '..');
-  const frontendDir = path.join(repoRoot, 'frontend');
   const backendDir = path.join(repoRoot, 'backend');
   const backendPort = await getFreePort();
-  const frontendPort = await getFreePort();
 
-  let frontendProcess;
   let backendProcess;
 
   try {
@@ -213,18 +210,8 @@ async function run() {
       }
     });
 
-    frontendProcess = startProcess('frontend', frontendDir, ['start', '--', '--port', String(frontendPort)]);
-
-    await waitForCheck('frontend /dashboard', async () => {
-      const response = await makeRequest({ method: 'GET', port: frontendPort, requestPath: '/dashboard' });
-      if (response.statusCode !== 200) {
-        throw new Error(`Expected 200 from frontend route, got ${response.statusCode}`);
-      }
-    });
-
-    process.stdout.write('Runtime smoke check passed. Frontend and backend were both reachable with expected responses.\n');
+    process.stdout.write('Runtime smoke check passed. Backend was reachable with expected responses.\n');
   } finally {
-    await stopProcess(frontendProcess);
     await stopProcess(backendProcess);
   }
 }

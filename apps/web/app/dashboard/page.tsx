@@ -3,8 +3,16 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { buildApiUrl, buildAuthHeaders, readJsonSafely, unwrapApiData } from '../../lib/api';
-import { clearStoredToken, getStoredToken } from '../../lib/auth';
+import { SessionGuard } from '../../components/session-guard';
+import {
+  buildApiUrl,
+  buildAuthHeaders,
+  readJsonSafely,
+  unwrapApiData,
+  getTransactions,
+  type Transaction
+} from '../../lib/api';
+import { clearStoredToken } from '../../lib/auth';
 
 type DashboardSummary = {
   user: {
@@ -31,6 +39,12 @@ type DashboardSummary = {
     dueInDays: number;
     status: string;
   }>;
+  dailySpendingLimit?: {
+    amount: number;
+    remainingDays: number;
+    availableFundsUsed: number;
+    formulaVersion: string;
+  };
   recurringDataSource?: {
     kind?: string;
     detectedCount?: number;
@@ -59,23 +73,14 @@ function getConfidenceLabel(status?: NonNullable<DashboardSummary['recurringData
   return 'Linked-data confidence: estimated';
 }
 
-export default function DashboardPage() {
+function DashboardContent({ token }: { token: string }) {
   const router = useRouter();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [tokenPreview, setTokenPreview] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [recentTxs, setRecentTxs] = useState<Transaction[]>([]);
 
   useEffect(() => {
-    const token = getStoredToken();
-
-    if (!token) {
-      router.replace('/login');
-      return;
-    }
-
-    setTokenPreview(`${token.slice(0, 18)}...`);
-
     async function loadDashboard() {
       setLoading(true);
       setError('');
@@ -98,6 +103,11 @@ export default function DashboardPage() {
         }
 
         setSummary(unwrapApiData<DashboardSummary>(body));
+
+        const txResult = await getTransactions(token, 5);
+        if (txResult.data) {
+          setRecentTxs(txResult.data.transactions);
+        }
       } catch {
         setError('Unable to reach the API. Check that the backend is running.');
       } finally {
@@ -106,11 +116,9 @@ export default function DashboardPage() {
     }
 
     loadDashboard();
-  }, [router]);
+  }, [token, router]);
 
   async function handleSignOut() {
-    const token = getStoredToken();
-
     try {
       await fetch(buildApiUrl('/logout'), {
         method: 'POST',
@@ -169,11 +177,26 @@ export default function DashboardPage() {
         </div>
 
         <div className="dashboard-grid">
+          {!summary.recurringDataSource || summary.recurringDataSource.kind === 'prototype_seeded' ? (
+            <section className="metric-tile banking-cta-tile">
+              <p className="metric-label">Bank connection</p>
+              <p className="metric-copy">Connect your bank for real-time data</p>
+              <p className="inline-note">Link your bank account to automatically import transactions and detect recurring bills.</p>
+              <Link className="submit-button banking-cta-button" href="/banking">Set up banking</Link>
+            </section>
+          ) : null}
           <section className="metric-tile">
             <p className="metric-label">Money left this month</p>
             <p className="metric-copy">{formatCurrency(summary.totals.availableFunds)}</p>
             <p className="inline-note">{getConfidenceLabel(summary.recurringDataSource?.status)}</p>
           </section>
+          {summary.dailySpendingLimit ? (
+            <section className="metric-tile">
+              <p className="metric-label">Daily spending limit</p>
+              <p className="metric-copy">{formatCurrency(summary.dailySpendingLimit.amount)}</p>
+              <p className="inline-note">{summary.dailySpendingLimit.remainingDays} days left in this period</p>
+            </section>
+          ) : null}
           <section className="metric-tile">
             <p className="metric-label">Money coming in</p>
             <p className="metric-copy">{formatCurrency(summary.totals.income)}</p>
@@ -182,7 +205,6 @@ export default function DashboardPage() {
           <section className="metric-tile">
             <p className="metric-label">Regular commitments</p>
             <p className="metric-copy">{formatCurrency(summary.totals.recurringBills)}</p>
-            <p className="inline-note">Preview token: {tokenPreview || 'Checking session...'}</p>
           </section>
           <section className="metric-tile">
             <p className="metric-label">Day-to-day spending</p>
@@ -205,12 +227,44 @@ export default function DashboardPage() {
                 : 'No bills or regular payments are due soon.'}
             </p>
           </section>
+            {recentTxs.length > 0 && (
+              <section className="metric-tile" style={{ gridColumn: '1 / -1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+                  <p className="metric-label" style={{ margin: 0 }}>Recent activity</p>
+                  <Link href="/transactions" style={{ fontSize: '0.85rem', color: 'var(--accent)' }}>View all →</Link>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {recentTxs.map((tx) => (
+                    <div key={tx.transactionId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                      <div>
+                        <span style={{ fontWeight: 500 }}>{tx.merchantName || '—'}</span>
+                        <span style={{ color: 'var(--muted)', fontSize: '0.85rem', marginLeft: 10 }}>{new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(tx.bookedAt))}</span>
+                      </div>
+                      <span style={{ fontWeight: 600, color: tx.direction === 'in' ? 'var(--accent)' : 'var(--text)' }}>
+                        {tx.direction === 'in' ? '+' : '−'}{new Intl.NumberFormat('en-GB', { style: 'currency', currency: tx.currency || 'GBP' }).format(tx.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
         </div>
 
         <div className="auth-footer">
+          <Link className="secondary-button" href="/banking">Banking</Link>
+          <Link className="secondary-button" href="/import">Import statement</Link>
+            <Link className="secondary-button" href="/transactions">Transactions</Link>
           <Link className="secondary-button" href="/">Back to landing page</Link>
         </div>
       </section>
     </main>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <SessionGuard>
+      {(token) => <DashboardContent token={token} />}
+    </SessionGuard>
   );
 }

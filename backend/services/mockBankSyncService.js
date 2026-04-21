@@ -20,9 +20,12 @@ const CSV_COLUMN_ALIASES = {
   merchantName: ['merchantName', 'merchant', 'description', 'payee'],
   transactionId: ['transactionId', 'transaction_id', 'id', 'reference'],
   currency: ['currency', 'ccy'],
-  direction: ['direction', 'flow', 'type'],
+  direction: ['direction', 'flow', 'type', 'transaction type'],
   status: ['status', 'transactionStatus'],
-  categoryHint: ['categoryHint', 'category', 'category_hint']
+  categoryHint: ['categoryHint', 'category', 'category_hint'],
+  // Split debit/credit columns used by some UK bank exports (e.g. Nationwide)
+  paidOut: ['paid out', 'debit', 'debit amount', 'money out', 'withdrawal amount'],
+  paidIn: ['paid in', 'credit', 'credit amount', 'money in', 'deposit amount']
 };
 
 function validateMockBankLinkPayload(payload) {
@@ -220,6 +223,68 @@ function buildDeterministicTransactionId(ingestionId, rowIndex, bookedAt, amount
   return `csv_${Math.abs(hash)}`;
 }
 
+// Strip currency symbols and thousands separators so amounts like £1,234.56 become 1234.56.
+function stripCurrencyChars(raw) {
+  return `${raw || ''}`.replace(/[£$€¥₹]/g, '').replace(/,/g, '').trim();
+}
+
+// Normalize human-readable UK date strings ("21 Mar 2026", "01 April 2026") to ISO 8601.
+// ISO-ish strings (starting with a 4-digit year) are returned unchanged.
+function normalizeDateString(raw) {
+  const trimmed = `${raw || ''}`.trim();
+
+  // Already looks like ISO (2026-03-21 or 2026-03-21T...)
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // "DD Mon YYYY" or "DD Month YYYY" (e.g. "21 Mar 2026", "01 April 2026")
+  const match = trimmed.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+  if (match) {
+    const parsed = new Date(`${match[2]} ${Number(match[1])}, ${match[3]}`);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
+
+  return trimmed;
+}
+
+// Map verbose UK bank transaction-type labels to a binary direction.
+// Returns 'in', 'out', or null (unknown — caller falls back to other signals).
+function mapTransactionTypeToDirection(typeValue) {
+  const lower = `${typeValue || ''}`.toLowerCase().trim();
+
+  const OUT_PATTERNS = [
+    'payment to', 'direct debit', 'visa purchase', 'standing order',
+    'mortgage', 'monthly account fee', 'withdrawal', 'transfer to',
+    'fee', 'charge', 'debit'
+  ];
+  const IN_PATTERNS = [
+    'bank credit', 'transfer from', 'payment from', 'bacs credit',
+    'faster payment received', 'credit', 'interest'
+  ];
+
+  if (OUT_PATTERNS.some((p) => lower.includes(p))) return 'out';
+  if (IN_PATTERNS.some((p) => lower.includes(p))) return 'in';
+  return null;
+}
+
+// Find the index of the first line that looks like a valid transaction header
+// (contains at least one recognized canonical column name). This lets us skip
+// bank-export preamble rows like "Account Name:", "Account Balance:", etc.
+function findHeaderLineIndex(lines) {
+  for (let i = 0; i < lines.length; i += 1) {
+    const headers = parseCsvLine(lines[i]);
+    const resolved = resolveHeaderIndexMap(headers);
+    // A valid header must at least identify when the transaction happened
+    if (typeof resolved.bookedAt === 'number') {
+      return i;
+    }
+  }
+  return 0; // fallback: treat first line as header
+}
+
 function parseCsvIngestionPayload(payload) {
   const ingestionId = typeof payload.ingestionId === 'string' ? payload.ingestionId.trim() : '';
   const csvData = typeof payload.csvData === 'string' ? payload.csvData : '';
@@ -254,10 +319,18 @@ function parseCsvIngestionPayload(payload) {
     };
   }
 
-  const headers = parseCsvLine(lines[0]);
+  const headerLineIndex = findHeaderLineIndex(lines);
+  const headers = parseCsvLine(lines[headerLineIndex]);
   const headerIndexes = resolveHeaderIndexMap(headers);
 
+  // Amount can be satisfied by a single 'amount' column OR by split 'paid out'/'paid in' columns.
+  const hasSplitAmountColumns = typeof headerIndexes.paidOut === 'number' || typeof headerIndexes.paidIn === 'number';
+
   for (const requiredColumn of CSV_REQUIRED_COLUMNS) {
+    if (requiredColumn === 'amount' && hasSplitAmountColumns) {
+      continue;
+    }
+
     if (typeof headerIndexes[requiredColumn] !== 'number') {
       return {
         error: `CSV header is missing required column: ${requiredColumn}.`,
@@ -273,20 +346,54 @@ function parseCsvIngestionPayload(payload) {
   const transactions = [];
   const rowErrors = [];
 
-  for (let rowIndex = 1; rowIndex < lines.length; rowIndex += 1) {
+  for (let rowIndex = headerLineIndex + 1; rowIndex < lines.length; rowIndex += 1) {
     const rowValues = parseCsvLine(lines[rowIndex]);
 
-    const bookedAt = `${rowValues[headerIndexes.bookedAt] || ''}`.trim();
+    const bookedAtRaw = `${rowValues[headerIndexes.bookedAt] || ''}`.trim();
+    const bookedAt = normalizeDateString(bookedAtRaw);
     const merchantName = `${rowValues[headerIndexes.merchantName] || ''}`.trim();
-    const amountRaw = `${rowValues[headerIndexes.amount] || ''}`.replace(/,/g, '').trim();
-    const parsedAmount = Number(amountRaw);
-    const explicitDirection = `${rowValues[headerIndexes.direction] || ''}`.trim().toLowerCase();
-    const direction = explicitDirection || inferDirectionFromAmount(parsedAmount);
-    const amount = Math.abs(parsedAmount);
-    const status = `${rowValues[headerIndexes.status] || 'booked'}`.trim().toLowerCase();
-    const currency = `${rowValues[headerIndexes.currency] || 'GBP'}`.trim().toUpperCase();
     const categoryHint = `${rowValues[headerIndexes.categoryHint] || ''}`.trim();
     const providedTransactionId = `${rowValues[headerIndexes.transactionId] || ''}`.trim();
+    const currency = `${rowValues[headerIndexes.currency] || 'GBP'}`.trim().toUpperCase();
+    const status = `${rowValues[headerIndexes.status] || 'booked'}`.trim().toLowerCase();
+
+    // Resolve amount and direction
+    let amount;
+    let direction;
+
+    if (hasSplitAmountColumns) {
+      // Separate paid-out / paid-in columns (e.g. Nationwide exports)
+      const paidOutRaw = stripCurrencyChars(rowValues[headerIndexes.paidOut]);
+      const paidInRaw = stripCurrencyChars(rowValues[headerIndexes.paidIn]);
+      const paidOutVal = Number(paidOutRaw) || 0;
+      const paidInVal = Number(paidInRaw) || 0;
+
+      if (paidOutVal > 0) {
+        amount = paidOutVal;
+        direction = 'out';
+      } else if (paidInVal > 0) {
+        amount = paidInVal;
+        direction = 'in';
+      } else {
+        amount = 0;
+        direction = null;
+      }
+    } else {
+      // Single signed or unsigned amount column
+      const amountRaw = stripCurrencyChars(rowValues[headerIndexes.amount]);
+      const parsedAmount = Number(amountRaw);
+      const typeColumnValue = typeof headerIndexes.direction === 'number'
+        ? `${rowValues[headerIndexes.direction] || ''}`.trim()
+        : '';
+      const binaryDirection = ALLOWED_DIRECTIONS.has(typeColumnValue.toLowerCase())
+        ? typeColumnValue.toLowerCase()
+        : null;
+      direction = binaryDirection
+        || inferDirectionFromAmount(parsedAmount)
+        || mapTransactionTypeToDirection(typeColumnValue);
+      amount = Math.abs(parsedAmount);
+    }
+
     const transactionId = providedTransactionId || buildDeterministicTransactionId(
       ingestionId,
       rowIndex,
@@ -307,7 +414,7 @@ function parseCsvIngestionPayload(payload) {
         status,
         categoryHint
       },
-      rowIndex - 1
+      rowIndex - headerLineIndex - 1
     );
 
     if (transactionResult.error) {
