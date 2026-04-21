@@ -1,6 +1,0 @@
-- [ ] Replace the current prototype frontend with the target web architecture defined in docs/TECH_STACK.md
-- [ ] Reactivate registration and login only after the end-to-end customer journey is redesigned and documented
-- [ ] Reintroduce customer navigation only after active flows are supported by API contracts and tests
-- [ ] Add E2E coverage for active customer journeys before re-enabling deprecated auth flows
-- [ ] Align frontend implementation checkpoints with docs/README.md, docs/TEST_STRATEGY.md, and docs/openapi.yaml
-- [ ] Retire or replace prototype-only screens once the target stack is in place

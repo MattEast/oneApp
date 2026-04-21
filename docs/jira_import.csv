@@ -146,10 +146,10 @@ Sub-task,Implement error logging and monitoring,Add error logging and monitoring
 Sub-task,Plan data backup and recovery,Plan backup and recovery for available funds data.,Spending & Budgeting Tools,Calculate available funds
 Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on available funds calculation.,Spending & Budgeting Tools,Calculate available funds
 Story,Daily spending limit,"Show a daily spending limit based on current budget context. AC: the limit uses the documented formula and latest available-funds data; upcoming bank-sourced obligations are considered; users can see the resulting daily figure in the dashboard; updates occur when underlying data changes; stale or incomplete source data is surfaced safely; edge cases and failures are tested.",Spending & Budgeting Tools,,Calculate available funds
-Sub-task,Define daily spending limit formula,Define the calculation logic for daily spending limit.,Spending & Budgeting Tools,Daily spending limit,Daily spending limit
-Sub-task,Implement daily limit calculation,Develop backend logic to calculate daily spending limit.,Spending & Budgeting Tools,Daily spending limit,Define daily spending limit formula
-Sub-task,Display daily limit on dashboard,Show daily spending limit in the dashboard UI.,Spending & Budgeting Tools,Daily spending limit,Implement daily limit calculation
-Sub-task,Add tests for daily spending limit,Write tests to verify daily limit calculation and display.,Spending & Budgeting Tools,Daily spending limit,Implement daily limit calculation
+Sub-task,Define daily spending limit formula,Define the calculation logic for daily spending limit.,Spending & Budgeting Tools,Daily spending limit,Daily spending limit,Yes
+Sub-task,Implement daily limit calculation,Develop backend logic to calculate daily spending limit.,Spending & Budgeting Tools,Daily spending limit,Define daily spending limit formula,Yes
+Sub-task,Display daily limit on dashboard,Show daily spending limit in the dashboard UI.,Spending & Budgeting Tools,Daily spending limit,Implement daily limit calculation,Yes
+Sub-task,Add tests for daily spending limit,Write tests to verify daily limit calculation and display.,Spending & Budgeting Tools,Daily spending limit,Implement daily limit calculation,Yes
 Sub-task,Ensure accessibility compliance,Review and improve accessibility for daily spending limit.,Spending & Budgeting Tools,Daily spending limit,Define daily spending limit formula
 Sub-task,Add user/developer documentation,Document daily spending limit for users and developers.,Spending & Budgeting Tools,Daily spending limit,Daily spending limit
 Sub-task,Monitor and optimize performance,Monitor and optimize performance for daily spending limit.,Spending & Budgeting Tools,Daily spending limit
@@ -233,13 +233,17 @@ Sub-task,Implement error logging and monitoring,Add error logging and monitoring
 Sub-task,Plan data backup and recovery,Plan backup and recovery for bank-linking data.,Bank Account Integration,Mocked bank-linked data ingestion
 Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on bank-linking features.,Bank Account Integration,Mocked bank-linked data ingestion
 Story,Live bank sync,"Integrate with a selected bank provider to ingest live transaction data safely and reliably. AC: the chosen provider path is documented; live sync updates internal data reliably; duplicate and partial-sync cases are handled; sensitive bank data is processed securely; consent, re-authentication, and revocation rules for UK users are documented; operational failures are visible and recoverable.",Bank Account Integration,,Mocked bank-linked data ingestion;Data security
-Sub-task,Implement live provider integration,Develop backend logic to connect and sync with the selected bank provider.,Bank Account Integration,Live bank sync,Mocked bank-linked data ingestion
-Sub-task,Handle live transaction data securely,Ensure secure handling and storage of live bank transaction data.,Bank Account Integration,Live bank sync,Implement live provider integration
-Sub-task,Update app data from live sync,Implement logic to update app data as new live transactions arrive.,Bank Account Integration,Live bank sync,Implement live provider integration
-Sub-task,Add tests for live bank sync,Write tests for live bank integration and update flows.,Bank Account Integration,Live bank sync,Implement live provider integration
+Sub-task,Implement live provider integration,Develop backend logic to connect and sync with the selected bank provider.,Bank Account Integration,Live bank sync,Mocked bank-linked data ingestion,Yes
+Sub-task,Handle live transaction data securely,Ensure secure handling and storage of live bank transaction data.,Bank Account Integration,Live bank sync,Implement live provider integration,Yes
+Sub-task,Update app data from live sync,Implement logic to update app data as new live transactions arrive.,Bank Account Integration,Live bank sync,Implement live provider integration,Yes
+Sub-task,Add tests for live bank sync,Write tests for live bank integration and update flows.,Bank Account Integration,Live bank sync,Implement live provider integration,Yes
 Sub-task,Ensure accessibility compliance,Review and improve accessibility for live bank-sync features.,Bank Account Integration,Live bank sync,Mocked bank-linked data ingestion
 Sub-task,Add user/developer documentation,Document live bank-sync features for users and developers.,Bank Account Integration,Live bank sync,Live bank sync
 Sub-task,Monitor and optimize performance,Monitor and optimize performance for live bank-sync features.,Bank Account Integration,Live bank sync
 Sub-task,Implement error logging and monitoring,Add error logging and monitoring for live bank-sync features.,Bank Account Integration,Live bank sync
 Sub-task,Plan data backup and recovery,Plan backup and recovery for live bank-sync data.,Bank Account Integration,Live bank sync
 Sub-task,Add user support/feedback mechanism,Provide a way for users to get help or give feedback on live bank-sync features.,Bank Account Integration,Live bank sync
+Story,Webhook-triggered freshness and customer visibility,"Use provider webhooks and fallback polling to keep linked data fresh and expose sync health clearly in customer-facing APIs and dashboard metadata.",Real-Time Bank Connectivity,,Async job and observability foundation;Monthly money snapshot,
+Sub-task,Implement webhook receiver and verification,Implement provider webhook endpoint with signature verification and safe event acknowledgment.,Real-Time Bank Connectivity,Webhook-triggered freshness and customer visibility,Implement queued live-sync job pipeline,
+Sub-task,Expose live-sync freshness state,Expose last-successful-sync lag/freshness and degraded status metadata through bank-sync and dashboard APIs.,Real-Time Bank Connectivity,Webhook-triggered freshness and customer visibility,Implement webhook receiver and verification,
+Sub-task,Add webhook and freshness tests,Add automated tests for webhook validation replay safety fallback polling and freshness-state rendering in API responses.,Real-Time Bank Connectivity,Webhook-triggered freshness and customer visibility,Expose live-sync freshness state,

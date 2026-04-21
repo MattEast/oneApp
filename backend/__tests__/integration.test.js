@@ -43,7 +43,8 @@ describe('Integration: Registration → Login → Authenticated Access → Logou
       .get('/api/v1/dashboard-summary')
       .set('Authorization', `Bearer ${token}`);
     expect(dashboardRes.statusCode).toBe(200);
-    expect(dashboardRes.body.data).toHaveProperty('periodLabel', 'April 2026');
+    expect(dashboardRes.body.data).toHaveProperty('periodLabel');
+    expect(dashboardRes.body.data.periodLabel).toMatch(/^[A-Z][a-z]+ \d{4}$/);
     expect(dashboardRes.body.data).toHaveProperty('totals');
     expect(dashboardRes.body.data.user).toHaveProperty('fullname', 'Integration User');
 

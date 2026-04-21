@@ -415,6 +415,338 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /bank-sync/connect:
+    post:
+      summary: Initiate bank account linking
+      description: Starts the OAuth consent flow with the configured UK Open Banking provider. Returns a consent URL that the client should redirect the user to.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Consent URL generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSyncConnectResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Provider not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/callback:
+    post:
+      summary: Handle provider consent callback
+      description: Exchanges the OAuth authorisation code from the provider callback for access and refresh tokens, discovers linked accounts, and persists consent state.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankSyncCallbackRequest'
+      responses:
+        '201':
+          description: Bank account linked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSyncCallbackResponse'
+        '400':
+          description: Invalid callback parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Provider rejected the authorisation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/sync:
+    post:
+      summary: Trigger live transaction sync
+      description: Fetches the latest transactions from the linked bank account via the provider API and ingests them through the standard transaction pipeline with deduplication.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Live sync completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveSyncResponse'
+        '207':
+          description: Live sync completed with partial success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveSyncResponse'
+        '400':
+          description: No active bank link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized or expired bank link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Provider fetch failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Provider not configured or sync unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/live-status:
+    get:
+      summary: Get live sync status
+      description: Returns the current bank sync status enriched with live provider connection state, token validity, and sync freshness.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Live sync status returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveSyncStatusResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/webhook:
+    post:
+      summary: Receive provider webhook events
+      description: Accepts provider transaction-update webhook events, validates the provider signature, deduplicates replayed events, and enqueues incremental sync jobs for matched linked accounts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankSyncWebhookEvent'
+      responses:
+        '202':
+          description: Webhook accepted and a sync job was created or reused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSyncWebhookResponse'
+        '200':
+          description: Webhook acknowledged but ignored or deduplicated safely
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSyncWebhookResponse'
+        '400':
+          description: Invalid webhook payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Webhook verification is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/disconnect:
+    post:
+      summary: Revoke bank account link
+      description: Revokes the consent and clears stored provider tokens and linked account data. The user must re-consent to reconnect.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Bank link revoked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSyncDisconnectResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/jobs/enqueue:
+    post:
+      summary: Enqueue a sync job
+      description: Creates a new sync job for the authenticated user. If a pending or running job already exists, returns the existing job without creating a duplicate.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncJobEnqueueRequest'
+      responses:
+        '201':
+          description: New sync job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJobEnqueueResponse'
+        '200':
+          description: Existing pending/running job returned (deduplicated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJobEnqueueResponse'
+        '400':
+          description: No bank sync profile or invalid job type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/jobs/{jobId}/execute:
+    post:
+      summary: Execute a sync job
+      description: Triggers execution of a pending or failed sync job. Fetches transactions from the provider, ingests them idempotently, and updates the sync checkpoint.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sync job executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJobExecuteResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Job cannot be executed in its current status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Provider error (transient or terminal)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/jobs/{jobId}:
+    get:
+      summary: Get sync job status
+      description: Returns the current status and metadata of a sync job.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJobStatusResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bank-sync/jobs:
+    get:
+      summary: List sync job history
+      description: Returns the authenticated user's sync job history, ordered by most recent first.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Job history returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncJobHistoryResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /recurring-obligations:
     get:
       summary: List detected recurring obligations
@@ -677,6 +1009,22 @@ components:
             availableFunds:
               type: number
               description: Prototype GBP amount in major currency units.
+        dailySpendingLimit:
+          type: object
+          description: Daily spending limit derived from available funds and remaining days in the current payment period.
+          properties:
+            amount:
+              type: number
+              description: Suggested maximum daily spend in GBP major currency units.
+            remainingDays:
+              type: integer
+              description: Number of days remaining in the current payment period used as the divisor.
+            availableFundsUsed:
+              type: number
+              description: The available-funds figure (GBP major units) that the daily limit was derived from.
+            formulaVersion:
+              type: string
+              description: Versioned identifier for the daily-limit formula in use.
         categories:
           type: array
           items:
@@ -701,6 +1049,8 @@ components:
                 type: string
         recurringDataSource:
           $ref: '#/components/schemas/RecurringDataSource'
+        linkedDataFreshness:
+          $ref: '#/components/schemas/LinkedDataFreshness'
         oneTimeEntries:
           type: array
           items:
@@ -998,6 +1348,12 @@ components:
           type: integer
         latestSync:
           $ref: '#/components/schemas/SyncSummary'
+        lastSyncAt:
+          type: string
+          format: date-time
+          nullable: true
+        webhookState:
+          $ref: '#/components/schemas/BankSyncWebhookState'
     BankSyncStatusResponse:
       type: object
       properties:
@@ -1027,6 +1383,348 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SyncSummary'
+    BankSyncConnectResponse:
+      type: object
+      properties:
+        consentUrl:
+          type: string
+          description: URL to redirect the user to for provider consent.
+        provider:
+          type: string
+        state:
+          type: string
+          description: Opaque state token for CSRF protection in the consent callback.
+    BankSyncCallbackRequest:
+      type: object
+      required:
+        - code
+        - state
+      properties:
+        code:
+          type: string
+          description: OAuth authorisation code from the provider redirect.
+        state:
+          type: string
+          description: State token originally issued by the connect endpoint.
+    BankSyncCallbackResponse:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/BankSyncStatusResponse'
+        linked:
+          type: boolean
+          description: Whether an account was successfully discovered and linked.
+        provider:
+          type: string
+        contractVersion:
+          type: string
+    LiveSyncResponse:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/BankSyncStatusResponse'
+        syncSummary:
+          $ref: '#/components/schemas/SyncSummary'
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/MockBankTransaction'
+        transactionCount:
+          type: integer
+        contractVersion:
+          type: string
+    LiveSyncStatusResponse:
+      type: object
+      properties:
+        provider:
+          type: string
+        providerDisplayName:
+          type: string
+        consent:
+          type: object
+        linkedAccount:
+          type: object
+          nullable: true
+        transactionCount:
+          type: integer
+        latestSync:
+          $ref: '#/components/schemas/SyncSummary'
+        lastSyncAt:
+          type: string
+          format: date-time
+          nullable: true
+        webhookState:
+          $ref: '#/components/schemas/BankSyncWebhookState'
+        liveSync:
+          type: object
+          properties:
+            configured:
+              type: boolean
+              description: Whether the provider environment variables are set.
+            provider:
+              type: string
+            linked:
+              type: boolean
+              description: Whether an active token exists.
+            tokenStatus:
+              type: string
+              enum:
+                - none
+                - valid
+                - expired_refreshable
+                - expired
+              description: Current state of the stored access token.
+            contractVersion:
+              type: string
+        linkedDataFreshness:
+          $ref: '#/components/schemas/LinkedDataFreshness'
+    BankSyncWebhookState:
+      type: object
+      properties:
+        lastReceivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastEventId:
+          type: string
+          nullable: true
+        lastEventType:
+          type: string
+          nullable: true
+        lastJobId:
+          type: string
+          nullable: true
+        lastFallbackPollingAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastFallbackPollingJobId:
+          type: string
+          nullable: true
+    LinkedDataFreshness:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - not_linked
+            - pending_initial_sync
+            - fresh
+            - stale
+            - degraded
+            - unavailable
+        lagMinutes:
+          type: integer
+          nullable: true
+        lastSuccessfulSyncAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastWebhookAt:
+          type: string
+          format: date-time
+          nullable: true
+    BankSyncWebhookEvent:
+      type: object
+      required:
+        - eventId
+        - type
+        - accountId
+      properties:
+        eventId:
+          type: string
+        type:
+          type: string
+        accountId:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+    BankSyncWebhookResponse:
+      type: object
+      properties:
+        acknowledged:
+          type: boolean
+        deduplicated:
+          type: boolean
+        ignored:
+          type: boolean
+        reason:
+          type: string
+        eventId:
+          type: string
+        eventType:
+          type: string
+        accountId:
+          type: string
+        jobId:
+          type: string
+          nullable: true
+    BankSyncDisconnectResponse:
+      type: object
+      properties:
+        revoked:
+          type: boolean
+        provider:
+          type: string
+    SyncJobEnqueueRequest:
+      type: object
+      properties:
+        jobType:
+          type: string
+          enum:
+            - initial_sync
+            - incremental_sync
+            - retry_sync
+          default: incremental_sync
+    SyncJobEnqueueResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+        jobType:
+          type: string
+        syncWindow:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+            to:
+              type: string
+              format: date
+        deduplicated:
+          type: boolean
+          description: True if an existing pending/running job was returned instead of creating a new one.
+        contractVersion:
+          type: string
+    SyncJobExecuteResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum:
+            - completed
+        syncSummary:
+          type: object
+          properties:
+            ingestionId:
+              type: string
+            source:
+              type: string
+            outcome:
+              type: string
+            acceptedCount:
+              type: integer
+            duplicateCount:
+              type: integer
+            rejectedCount:
+              type: integer
+        checkpoint:
+          type: object
+          properties:
+            lastSyncedTo:
+              type: string
+              format: date
+            lastJobId:
+              type: string
+            lastSyncAt:
+              type: string
+              format: date-time
+            lastOutcome:
+              type: string
+        contractVersion:
+          type: string
+    SyncJobStatusResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        jobType:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - completed
+            - failed
+            - dead_letter
+        attempt:
+          type: integer
+        maxAttempts:
+          type: integer
+        lastError:
+          type: string
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        nextRetryAt:
+          type: string
+          format: date-time
+          nullable: true
+        result:
+          type: object
+          nullable: true
+        contractVersion:
+          type: string
+    SyncJobHistoryResponse:
+      type: object
+      properties:
+        jobs:
+          type: array
+          items:
+            type: object
+            properties:
+              jobId:
+                type: string
+              jobType:
+                type: string
+              status:
+                type: string
+              attempt:
+                type: integer
+              maxAttempts:
+                type: integer
+              lastError:
+                type: string
+                nullable: true
+              scheduledAt:
+                type: string
+                format: date-time
+                nullable: true
+              startedAt:
+                type: string
+                format: date-time
+                nullable: true
+              completedAt:
+                type: string
+                format: date-time
+                nullable: true
+              result:
+                type: object
+                nullable: true
+        total:
+          type: integer
+        contractVersion:
+          type: string
     RecurringPaymentRequest:
       type: object
       required:
@@ -1109,6 +1807,7 @@ components:
           enum:
             - bank_linked
             - csv_import
+            - mixed
             - prototype_seeded
         detectedCount:
           type: integer

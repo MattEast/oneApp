@@ -93,9 +93,9 @@ These flows have been explicitly deprecated in code and tests until they are rea
 	```bash
 	npm run dev:backend
 	```
-3. Start the active prototype frontend from root:
+3. Start the active web app from root:
 	```bash
-	npm run dev:frontend
+	npm run dev:web
 	```
 
 #### Direct Prototype Commands (unchanged fallback)
@@ -105,14 +105,14 @@ These flows have been explicitly deprecated in code and tests until they are rea
 	npm install
 	npm start
 	```
-2. Start frontend directly:
+2. Start web directly:
 	```bash
-	cd frontend
+	cd apps/web
 	npm install
-	npm start
+	npm run dev
 	```
 
-The backend server runs on http://localhost:4000 and the prototype frontend runs on http://localhost:3000.
+The backend server runs on http://localhost:4000 and the web app runs on http://localhost:3001.
 
 The current frontend is still a prototype surface. The registration flow, login flow, dashboard landing view, and authenticated account summary are active for manual testing, while deprecated or target-state-only customer journeys should not be treated as production-ready features.
 

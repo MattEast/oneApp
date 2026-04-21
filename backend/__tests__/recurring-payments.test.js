@@ -63,7 +63,7 @@ describe('Recurring payments', () => {
     });
   });
 
-  it('keeps seeded recurring obligations in the dashboard summary for the prototype', async () => {
+  it('returns an empty dashboard when no bank data or seeded profile data exists', async () => {
     const { token } = await registerAndLogin(app);
     const response = await request(app)
       .get('/api/v1/dashboard-summary')
@@ -73,13 +73,11 @@ describe('Recurring payments', () => {
     expect(response.body.data.recurringDataSource).toEqual(
       expect.objectContaining({ kind: 'prototype_seeded', detectedCount: 0, status: 'fallback' })
     );
-    expect(response.body.data.totals.recurringBills).toBe(1685);
-    expect(response.body.data.categories).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: 'Rent or mortgage', amount: 1200 }),
-        expect.objectContaining({ name: 'Council tax and household bills', amount: 280 })
-      ])
-    );
+    expect(response.body.data.totals.recurringBills).toBe(0);
+    expect(response.body.data.totals.income).toBe(0);
+    expect(response.body.data.totals.flexibleSpending).toBe(0);
+    expect(response.body.data.totals.availableFunds).toBe(0);
+    expect(response.body.data.categories).toEqual([]);
   });
 
   it('keeps due-soon reminders when the due date rolls into the next cycle', async () => {

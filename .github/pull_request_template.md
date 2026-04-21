@@ -19,7 +19,7 @@
 
 <!-- Describe how you verified the change. Include test run output, screenshots, or a checklist. -->
 - [ ] Backend tests pass (`npm run test:backend`)
-- [ ] Frontend tests pass (`npm run test:frontend`)
+- [ ] Web e2e tests pass (`npm run test:web:e2e`)
 - [ ] Contract validation passes (`npm run lint:contracts`)
 - [ ] Manual smoke test performed (describe steps)
 

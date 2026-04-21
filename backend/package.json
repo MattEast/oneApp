@@ -18,6 +18,7 @@
   },
   "scripts": {
     "start": "node server.js",
+    "pretest": "prisma generate",
     "test": "dotenv -e .env.test -- jest"
   },
   "devDependencies": {

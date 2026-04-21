@@ -136,7 +136,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       }
 
       const data = unwrapApiData<AuthResponse>(body);
-      storeToken(data.token);
+      storeToken(data.token, data.expiresIn ?? 3600);
       router.push('/dashboard');
     } catch (error) {
       setErrors({ form: 'Unable to reach the API. Check that the backend is running.' });

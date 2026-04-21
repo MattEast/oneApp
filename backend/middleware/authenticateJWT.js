@@ -1,10 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { logWarn } = require('../utils/observability');
+const { getJwtSecret } = require('../config/jwtSecret');
 
-const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? undefined : 'dev_secret');
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required in production');
-}
+const JWT_SECRET = getJwtSecret();
 
 function authenticateJWT(req, res, next) {
   const authHeader = req.headers.authorization;
