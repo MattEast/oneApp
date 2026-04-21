@@ -32,6 +32,7 @@
 | 2026-04-07 | Add startup readiness and migration guardrails | Added pre-listen database readiness checks for required tables, surfaced actionable migration guidance when startup prerequisites are missing, and added regression coverage for missing-schema and unreachable-database cases |
 | 2026-04-07 | Formalize and surface available-funds confidence | Documented available-funds formula and fallback rules, hardened backend available-funds calculation for active/fallback/degraded recurring-data states, and updated dashboard UI to surface confidence context with expanded regression coverage |
 | 2026-04-08 | Deliver target web auth and dashboard shell slice | Added apps/web Next.js migration slice for register, sign in, protected dashboard shell, and API helpers; fixed strict TypeScript build issues; added Playwright auth-to-dashboard smoke coverage; and aligned run/test documentation for legacy frontend plus new web slice |
+| 2026-04-09 | Harden CSV upload validation and contract coverage | Added csv-import auth, multipart file-type, and file-size validation tests; enforced explicit 415/413 API responses for invalid uploads; and documented supported CSV column aliases, parsing rules, and upload error responses in OpenAPI |
 
 ## Returned To To-Do
 
