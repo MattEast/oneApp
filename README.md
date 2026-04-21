@@ -13,7 +13,7 @@ Personal finance management application.
 
 ```bash
 npm install                 # install all workspace dependencies
-cd backend && npx prisma migrate deploy && cd ..  # apply DB migrations for local dev
+cd backend && npx prisma generate && npx prisma migrate deploy && cd ..  # generate Prisma client & apply DB migrations
 npm run dev:backend         # start backend server
 npm run dev:web             # start Next.js web app on port 3001
 ```
